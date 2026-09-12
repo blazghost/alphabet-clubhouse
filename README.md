@@ -29,6 +29,13 @@ Open `index.html` in any browser, or use the published link.
 - **Pip does the talking.** Giving the voice a face is what makes it read as
   someone caring rather than a machine reading words aloud. He reacts to every
   answer, and tapping him repeats the question.
+- **Teacher delivery.** Modelled on how the toddler-teaching videos on
+  YouTube work, because that style is what she already responds to: slow and
+  sing-song (parentese — pitched up, rate down), the target sound said three
+  times, and then a real pause that waits for her to say it back, with a
+  *Your turn!* badge on screen so the silence reads as an invitation rather
+  than a bug. Producing the sound aloud is what builds the phoneme, not
+  recognising it. Switchable to "Simple" in Settings.
 - **Her name.** Optional, set in Settings, and woven into about half the praise
   so it is her being congratulated, not a generic player.
 

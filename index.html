@@ -363,6 +363,21 @@ select.pill{max-width:100%;appearance:none;-webkit-appearance:none;padding-right
 @media (prefers-reduced-motion:reduce){
   .pipwrap,.pip .eye{animation:none!important}
 }
+
+/* ---------- "your turn" — the wait is the whole point ---------- */
+.turnbadge{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:63;
+  background:var(--sun);border:5px solid var(--ink);border-radius:999px;
+  box-shadow:0 6px 0 var(--ink);padding:12px 26px;display:flex;align-items:center;gap:14px;
+  font-size:clamp(20px,3vw,28px);font-weight:800;animation:turnpulse 1.05s ease-in-out infinite;
+}
+@keyframes turnpulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.055)}}
+.turnbar{display:block;width:96px;height:14px;border:3px solid var(--ink);border-radius:999px;background:#fff;overflow:hidden}
+.turnbar i{display:block;height:100%;width:0;background:var(--poppy);border-radius:999px;animation:turnfill linear forwards}
+@keyframes turnfill{from{width:0}to{width:100%}}
+.pipwrap.listening{animation:lean 1.15s ease-in-out infinite}
+.pipwrap.listening .pupil{transform:translateY(-2px) scale(1.18)}
+@media (prefers-reduced-motion:reduce){.turnbadge,.turnbar i{animation:none!important}}
 </style>
 
 <div class="app">
@@ -475,7 +490,7 @@ const TILECOLORS = ["t-poppy","t-sky","t-grape","t-grass","t-sun"];
    ===================================================================== */
 const KEY = "alphabet-clubhouse-v1";
 const defaults = {stars:0, seen:{}, best:{}, caseMode:"upper", speech:true, rate:0.92,
-                  voiceName:null, sfx:true, kidName:"", stickers:[]};
+                  voiceName:null, sfx:true, kidName:"", stickers:[], style:"teacher"};
 let S = Object.assign({}, defaults);
 try{ const raw = localStorage.getItem(KEY); if(raw) S = Object.assign({}, defaults, JSON.parse(raw)); }catch(e){}
 /* Older saves used slower rates that made the voice drone. */
@@ -556,8 +571,13 @@ function speakNow(text, opts){
        for bit the same sound as the first, which is what makes a
        repeated phrase read as canned. */
     const jitter = 0.98 + Math.random() * 0.04;
-    u.rate  = (opts.rate  || S.rate) * jitter;
-    u.pitch  = (opts.pitch || 1.0) * jitter;   /* pitched-up synth = chipmunk robot */
+    /* Parentese: slower and pitched up, the way a teacher speaks to a
+       small child. On a good neural voice this reads as sing-song; it is
+       only the old formant synths that turn it into a chipmunk. */
+    const sRate  = teacherMode() ? 0.86 : 1;
+    const sPitch = teacherMode() ? 1.22 : 1.0;
+    u.rate  = (opts.rate  || S.rate) * sRate * jitter;
+    u.pitch = (opts.pitch || sPitch) * jitter;
     u.volume = opts.volume || 0.92;            /* a warm voice does not shout */
     let done = false;
     const finish = () => { if(done) return; done = true; clearTimeout(guard); res(); };
@@ -587,8 +607,26 @@ function sayLetterName(l){ return say(letterName(l)); }
 function sayFull(l, opts){
   opts = opts || {};
   const d = BY[l];
-  const lead = opts.lead ? opts.lead + " " : "";
-  say(lead + letterName(l) + " says " + d.sound + ", like " + d.word + "!", {now: !!opts.now});
+  if(!teacherMode()){
+    const lead = opts.lead ? opts.lead + " " : "";
+    say(lead + letterName(l) + " says " + d.sound + ", like " + d.word + "!", {now: !!opts.now});
+    return;
+  }
+  beats([
+    opts.lead || null,
+    letterName(l) + "!",
+    240,
+    letterName(l) + " says " + d.sound + ".",
+    200,
+    d.sound + ", " + d.sound + ", " + d.sound + "!",
+    240,
+    d.word + "! " + letterName(l) + " is for " + d.word + "."
+  ], !!opts.now);
+  if(opts.invite){
+    beats(["Now you try! Can you say " + d.sound + "?"]);
+    yourTurn(2600);
+    beats([pick(HEARD)]);
+  }
 }
 /* Warmth lives in the words more than in any setting. These are the
    things a patient grown-up says: togetherness, no hurry, never a
@@ -648,7 +686,9 @@ function stepConf(){
   else { confRAF = null; conf.classList.add("hidden"); cx.clearRect(0,0,conf.width,conf.height); }
 }
 function cheer(title, sub, ms){
-  sfxWin(); pipFace("party", 2200);
+  sfxWin(); sfxClap(7); pipFace("party", 2200);
+  if(teacherMode()) beats(["Yay!", 160, pick(["You did it!","You finished it!","Look what you did!"]),
+                           160, "I'm so proud of you!"]);
   const el = document.getElementById("cheer");
   document.getElementById("cheerTitle").textContent = title;
   document.getElementById("cheerSub").textContent = sub || "";
@@ -693,6 +733,7 @@ function openActivity(id){
   a.start();
 }
 function goHome(){
+  showTurn(false);
   cleanups.forEach(fn => { try{ fn(); }catch(e){} });
   cleanups = []; current = null;
   if("speechSynthesis" in window) speechSynthesis.cancel();
@@ -853,7 +894,7 @@ ACTIVITIES.board = {
       const t = makeTile(l, TILECOLORS[i % TILECOLORS.length], true);
       t.addEventListener("click", () => {
         flashRight(t);
-        sayFull(l, {now:true});
+        sayFull(l, {now:true, invite:true});
         markSeen(l);
         document.getElementById("bPic").textContent = BY[l].emoji;
         document.getElementById("bWord").textContent = show(l) + "   " + BY[l].word;
@@ -881,7 +922,7 @@ ACTIVITIES.which = {
     function next(){
       if(round >= 5){
         cheer("5 out of 5!", "You found every letter.", 2600);
-        setTimeout(goHome, 2600); return;
+        setTimeout(goHome, gap(2600)); return;
       }
       setDots(got, 5);
       const n = [3,3,4,5,6][round];
@@ -893,6 +934,7 @@ ACTIVITIES.which = {
       const ASKS = ["Can you find the letter ", "Find the letter ", "Where is the letter ", "Show me the letter "];
       setPrompt('Find the letter <b>' + tiles[opts.indexOf(target)].textContent + '</b>',
                 pick(ASKS) + letterName(target) + "?");
+      waitBeat(300); echo(letterName(target) + "!"); waitBeat(240); echo("Where is it?");
       opts.forEach((l, i) => {
         const t = tiles[i];
         t.addEventListener("click", () => {
@@ -901,7 +943,7 @@ ACTIVITIES.which = {
             record("which", got);
             sayFull(l, {now:true, lead: praise()});
             setDots(got, 5);
-            setTimeout(next, 1900);
+            setTimeout(next, gap(1900));
           } else {
             flashWrong(t);
             say(again() + " Find the letter " + letterName(target) + ".", {now:true});
@@ -928,6 +970,12 @@ ACTIVITIES.sounds = {
     playArea.append(mouth, wrap);
     const slow = {rate: Math.max(0.55, S.rate - 0.25)};
     function askAgain(d){
+      if(teacherMode()){
+        const sl = {t: d.sound + "!", rate: slow.rate};
+        beats(["Listen!", 240, sl, 280, sl, 280, sl, 340,
+               "Which letter says " + d.sound + "?"], true);
+        return;
+      }
       say("Which letter says", {now:true});
       say(d.sound + "?", slow);
       pause(420);
@@ -936,7 +984,7 @@ ACTIVITIES.sounds = {
     function next(){
       if(round >= 5){
         cheer("Sound expert!", "5 sounds matched.", 2600);
-        setTimeout(goHome, 2600); return;
+        setTimeout(goHome, gap(2600)); return;
       }
       setDots(got, 5);
       const d = pick(LETTERS);
@@ -953,9 +1001,9 @@ ACTIVITIES.sounds = {
           if(l === d.l){
             flashRight(t); addStar(); markSeen(l); got++; round++;
             record("sounds", Math.min(5, got));
-            sayFull(l, {now:true, lead: praise()});
+            sayFull(l, {now:true, lead: praise(), invite:true});
             setDots(got, 5);
-            setTimeout(next, 2200);
+            setTimeout(next, teacherMode() ? 11000 : 2200);
           } else {
             flashWrong(t);
             say(letterName(l) + " says " + BY[l].sound + ". Listen again.", {now:true});
@@ -986,7 +1034,7 @@ ACTIVITIES.begin = {
     function next(){
       if(round >= 5){
         cheer("Super sounding!", "5 beginning sounds.", 2600);
-        setTimeout(goHome, 2600); return;
+        setTimeout(goHome, gap(2600)); return;
       }
       setDots(got, 5);
       const d = pick(START_WORDS);
@@ -1007,10 +1055,11 @@ ACTIVITIES.begin = {
           if(l === d.l){
             flashRight(t); addStar(); markSeen(l); got++; round++;
             record("begin", got);
-            say(praise(), {now:true});
-            say(d.word + " starts with " + d.l.toUpperCase());
+            beats([praise(), 220, d.word + "!", 200,
+                   d.word + " starts with " + letterName(d.l) + ".", 220,
+                   d.sound + ", " + d.sound + ", " + d.word + "!"], true);
             setDots(got, 5);
-            setTimeout(next, 2100);
+            setTimeout(next, gap(2100));
           } else {
             flashWrong(t);
             say(again() + " Listen.", {now:true});
@@ -1075,7 +1124,7 @@ ACTIVITIES.build = {
     function next(){
       if(round >= 5){
         cheer("Word builder!", "You built 5 words.", 2800);
-        setTimeout(goHome, 2800); return;
+        setTimeout(goHome, gap(2800)); return;
       }
       setDots(got, 5);
       drag.reset();
@@ -1183,8 +1232,8 @@ ACTIVITIES.bubbles = {
         sayFull(target, {now:true, lead: praise()});
         if(got >= 5){
           cheer("Pop pop pop!", "5 bubbles popped.", 2600);
-          setTimeout(goHome, 2600);
-        } else setTimeout(ask, 1800);
+          setTimeout(goHome, gap(2600));
+        } else setTimeout(ask, gap(1800));
       } else {
         say("That one is " + letterName(hit.l) + ". Let's look for " + letterName(target) + " together.", {now:true});
       }
@@ -1239,7 +1288,7 @@ ACTIVITIES.bins = {
     function next(){
       if(round >= 4){
         cheer("All sorted!", "Big letters and little letters.", 2600);
-        setTimeout(goHome, 2600); return;
+        setTimeout(goHome, gap(2600)); return;
       }
       setDots(round,4);
       drag.reset();
@@ -1311,7 +1360,7 @@ ACTIVITIES.doors = {
         setDots(Math.min(opened,5), 5);
         sayFull(d.l, {now:true, lead: d.word + "!"});
         if(opened === 6){
-          setTimeout(() => { cheer("Every door open!", "Six double-clicks.", 2800); setTimeout(goHome, 2800); }, 1400);
+          setTimeout(() => { cheer("Every door open!", "Six double-clicks.", 2800); setTimeout(goHome, gap(2800)); }, gap(1400));
         }
       });
       wrap.appendChild(door);
@@ -1336,7 +1385,7 @@ ACTIVITIES.scroll = {
     function next(){
       if(round >= 4){
         cheer("You found them all!", "Scrolling like a pro.", 2600);
-        setTimeout(goHome, 2600); return;
+        setTimeout(goHome, gap(2600)); return;
       }
       setDots(got, 4);
       const list = shuffle(ALPHA);
@@ -1426,7 +1475,7 @@ ACTIVITIES.trace = {
     function loadLetter(){
       if(idx >= queue.length){
         cheer("You wrote them!", "4 letters traced.", 2800);
-        setTimeout(goHome, 2800); return;
+        setTimeout(goHome, gap(2800)); return;
       }
       setDots(idx, 4);
       letter = queue[idx];
@@ -1478,7 +1527,7 @@ ACTIVITIES.trace = {
         setDots(idx, 4);
         confetti();
         sayFull(letter, {now:true, lead: praise()});
-        setTimeout(loadLetter, 2600);
+        setTimeout(loadLetter, gap(2600));
       }
     }
     skip.addEventListener("click", () => { idx++; loadLetter(); });
@@ -1515,12 +1564,12 @@ const PIP_SVG = '<svg class="pip" viewBox="0 0 100 100" aria-hidden="true">' +
 let pipTimer = null;
 function pipFace(state, ms){
   const ws = document.querySelectorAll(".pipwrap");
-  ws.forEach(w => w.classList.remove("happy","oops","party"));
+  ws.forEach(w => w.classList.remove("happy","oops","party","listening"));
   if(!state) return;
   ws.forEach(w => w.classList.add(state));
   clearTimeout(pipTimer);
   pipTimer = setTimeout(() => document.querySelectorAll(".pipwrap")
-    .forEach(w => w.classList.remove("happy","oops","party")), ms || 900);
+    .forEach(w => w.classList.remove("happy","oops","party","listening")), ms || 900);
 }
 
 /* =====================================================================
@@ -1549,6 +1598,73 @@ const sfxOops    = () => { tone(392, 0, 0.20, "sine", 0.055); tone(329.63, 0.11,
 const sfxPop     = () => tone(880, 0, 0.12, "triangle", 0.07);
 const sfxSticker = () => [659.25,783.99,1046.5,1318.5].forEach((f,i) => tone(f, i*0.075, 0.5, "triangle", 0.08));
 const sfxWin     = () => [523.25,659.25,783.99,1046.5].forEach((f,i) => tone(f, i*0.12, 0.55, "sine", 0.10));
+
+/* =====================================================================
+   TEACHER DELIVERY
+   Modelled on how the toddler-teaching videos talk: slow, sing-song,
+   the key sound said three times, and then — the part that actually
+   does the work — a real pause that waits for her to say it back.
+   A silent gap only reads as an invitation if something on screen says
+   so, hence the "your turn" badge.
+   ===================================================================== */
+function teacherMode(){ return S.style !== "simple"; }
+/* Stretch the gap between rounds so the teaching is never cut off. */
+function gap(ms){ return teacherMode() ? ms + 3400 : ms; }
+/* A beat list: a string is spoken, a number is a pause. Only the first
+   beat is allowed to cut off whatever was already being said. */
+function beats(list, interrupt){
+  let first = true;
+  list.forEach(b => {
+    if(b === null || b === undefined || b === "") return;
+    if(typeof b === "number"){ pause(b); return; }
+    if(typeof b === "object"){
+      say(b.t, Object.assign({}, b, {now: interrupt && first}));
+    } else {
+      say(b, {now: interrupt && first});
+    }
+    first = false;
+  });
+}
+/* Speak only in teacher mode (repetitions, asides). */
+function echo(t, opts){ if(teacherMode()) say(t, opts); }
+function waitBeat(ms){ if(teacherMode()) pause(ms); }
+
+let turnEl = null;
+function showTurn(on, ms){
+  if(turnEl){ turnEl.remove(); turnEl = null; }
+  if(!on) return;
+  turnEl = document.createElement("div");
+  turnEl.className = "turnbadge";
+  turnEl.innerHTML = '<span aria-hidden="true">🗣️</span><span>Your turn!</span>' +
+                     '<span class="turnbar"><i style="animation-duration:' + (ms/1000) + 's"></i></span>';
+  document.body.appendChild(turnEl);
+}
+/* Hand the floor to her and genuinely wait. */
+function yourTurn(ms){
+  if(!teacherMode()) return;
+  ms = ms || 2600;
+  speakQueue = speakQueue.then(() => new Promise(res => {
+    showTurn(true, ms);
+    pipFace("listening", ms + 300);
+    setTimeout(() => { showTurn(false); res(); }, ms);
+  }));
+}
+const HEARD = ["Good job saying it!","I heard you! Well done.","Yay! You said it.",
+               "Nice speaking!","That was lovely saying.","You said it so well!"];
+function sfxClap(n){
+  if(!S.sfx) return;
+  const c = ac(); if(!c) return;
+  for(let i = 0; i < (n || 6); i++){
+    const dur = 0.085, t = c.currentTime + i * 0.125 + Math.random() * 0.02;
+    const buf = c.createBuffer(1, Math.ceil(c.sampleRate * dur), c.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / d.length, 3);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 1500; f.Q.value = 0.7;
+    const g = c.createGain(); g.gain.value = 0.14;
+    src.connect(f); f.connect(g); g.connect(c.destination); src.start(t);
+  }
+}
 
 /* =====================================================================
    STICKERS — five stars buys one. Something that visibly accumulates
@@ -1652,6 +1768,10 @@ document.getElementById("settingsBtn").addEventListener("click", () => {
       'value="' + (S.kidName || "").replace(/"/g, "&quot;") + '"></div>' +
     '<div class="row"><span class="lab">Letters look like</span>' + seg("caseMode", [["upper","A B C"],["lower","a b c"],["both","A a B b"]], S.caseMode) + '</div>' +
     '<div class="row"><span class="lab">Voice</span>' + seg("speech", [[ "on","On"],["off","Off"]], S.speech ? "on" : "off") + '</div>' +
+    '<div class="row"><span class="lab">How Pip talks</span>' +
+      seg("style", [["teacher","Teacher"],["simple","Simple"]], S.style) + '</div>' +
+    '<p class="sub" style="margin:-6px 0 10px;font-size:14px">Teacher talks slowly and sing-song, says each sound three times, ' +
+      'and then waits for her to say it back out loud. Simple just says it once.</p>' +
     '<div class="row"><span class="lab">Fun sounds</span>' + seg("sfx", [["on","On"],["off","Off"]], S.sfx ? "on" : "off") + '</div>' +
     '<div class="row"><span class="lab">Which voice</span><select class="pill" id="voiceSel"></select>' +
       '<button class="pill" id="tryVoice">Hear it</button></div>' +
@@ -1665,6 +1785,7 @@ document.getElementById("settingsBtn").addEventListener("click", () => {
         if(k === "caseMode") S.caseMode = v;
         if(k === "speech")   S.speech = (v === "on");
         if(k === "sfx")      { S.sfx = (v === "on"); if(S.sfx) sfxGood(); }
+        if(k === "style")    { S.style = v; sayFull("m", {now:true}); }
         if(k === "rate")     S.rate = parseFloat(v);
         save();
         host.querySelectorAll('[data-seg="' + k + '"]').forEach(o => o.setAttribute("aria-pressed", o === b));
@@ -1727,6 +1848,7 @@ document.getElementById("grownupsBtn").addEventListener("click", () => {
       '<li><b>Trackpad order.</b> Bubble Pop first (just moving the pointer), then Knock Knock, then the two dragging games. Trace a Letter is the hardest &mdash; it needs a click held down the whole way.</li>' +
       '<li><b>Every drag also works as two taps.</b> Tap the letter, then tap where it goes. Let her use that until the drag itself clicks.</li>' +
       '<li><b>Sounds, not names.</b> The voice says the <i>sound</i> a letter makes (&ldquo;mmm&rdquo;, not &ldquo;em&rdquo;) because that is what blends into words. Stretchy letters are held; b, d, p and t get the shortest possible &ldquo;uh&rdquo;.</li>' +
+      '<li><b>Saying it out loud is the point.</b> In Teacher style Pip models a sound three times, then stops and waits while a <i>Your turn!</i> badge shows on screen. That pause is deliberate — reading starts with making the sounds with her own mouth, not just recognising them. Switch to Simple in Settings if she would rather move quickly.</li>' +
       '<li><b>If the voice sounds robotic,</b> open Settings and try the other voices in the list — the ones marked <i>Natural</i>, <i>Neural</i> or <i>Online</i> are the human-sounding ones. On a Chromebook, more can be added under Settings &rarr; Accessibility &rarr; Text-to-speech.</li>' +
       '<li><b>Case.</b> Kindergarten usually starts in capitals. Switch to <i>A a B b</i> in Settings once she is matching both.</li>' +
       '<li><b>No losing.</b> A wrong answer never takes a star or ends a round &mdash; it just asks again.</li>' +
