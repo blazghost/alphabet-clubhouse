@@ -378,6 +378,69 @@ select.pill{max-width:100%;appearance:none;-webkit-appearance:none;padding-right
 .pipwrap.listening{animation:lean 1.15s ease-in-out infinite}
 .pipwrap.listening .pupil{transform:translateY(-2px) scale(1.18)}
 @media (prefers-reduced-motion:reduce){.turnbadge,.turnbar i{animation:none!important}}
+
+/* ---------- the reading path: stepping stones, not a menu ---------- */
+.path{display:flex;gap:0;align-items:stretch;flex-wrap:wrap}
+.step{
+  position:relative;flex:1;min-width:150px;background:none;padding:10px 8px 12px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.step::before{
+  content:"";position:absolute;left:-50%;right:50%;top:44px;height:6px;
+  background:repeating-linear-gradient(90deg,var(--manila-deep) 0 10px,transparent 10px 20px);z-index:0;
+}
+.step:first-child::before{display:none}
+.stone{
+  position:relative;z-index:1;width:74px;height:74px;border-radius:50%;display:grid;place-items:center;
+  border:4px solid var(--ink);box-shadow:0 5px 0 var(--ink);background:#fff;
+  font-size:26px;font-weight:800;transition:transform .15s ease,box-shadow .15s ease;
+}
+.step:hover .stone{transform:translateY(-4px) scale(1.05);box-shadow:0 9px 0 var(--ink)}
+.step:active .stone{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.stone.on{background:var(--sun)}
+.stone.done{background:var(--grass);color:#fff}
+.stone.locked{background:var(--manila-deep);border-color:#B9A98A;box-shadow:0 5px 0 #B9A98A;color:#8C7F68}
+.step .lets{
+  font-family:var(--font-letter);font-weight:700;font-size:19px;letter-spacing:.1em;color:var(--ink);
+  background:#fff;border:3px solid var(--ink);border-radius:999px;padding:3px 12px;
+}
+.step.locked .lets{opacity:.45}
+.step .cap{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+.coach{
+  background:#EAF4FB;border:3px solid var(--sky);border-radius:16px;padding:10px 14px;
+  font-size:15px;font-weight:600;line-height:1.45;color:var(--ink);max-width:620px;
+}
+.coach b{color:#1F6FA8}
+
+/* ---------- blending: sounds stretched under a swoop ---------- */
+.blend{display:flex;flex-direction:column;align-items:center;gap:2px}
+.blendrow{display:flex;gap:10px}
+.blendrow .tile{transition:transform .18s ease,background-color .18s ease,color .18s ease}
+.blendrow .tile.lit,.slot.lit,.tile.lit{transform:translateY(-10px) scale(1.14);background:var(--sun);color:var(--ink);border-color:var(--ink)}
+.blendrow .tile.all,.slot.all,.tile.all{background:var(--grass);color:#fff;border-style:solid;border-color:var(--ink)}
+.swoop{display:block;height:42px}
+.swoop path{fill:none;stroke:var(--sun);stroke-width:6;stroke-linecap:round;stroke-dasharray:var(--len);stroke-dashoffset:var(--len)}
+.swoop path.go{transition:stroke-dashoffset var(--dur,1.6s) linear;stroke-dashoffset:0}
+.swoop circle{fill:var(--poppy);stroke:var(--ink);stroke-width:3}
+
+/* ---------- the decodable reader ---------- */
+.reader{
+  background:#FFF7E6;border:5px solid var(--ink);border-radius:24px;box-shadow:0 6px 0 rgba(0,0,0,.3);
+  padding:28px 32px;max-width:720px;display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:center;
+}
+.rword{
+  font-family:var(--font-letter);font-weight:700;font-size:clamp(34px,6vw,54px);color:var(--ink);
+  background:none;padding:2px 8px;border-radius:12px;line-height:1.2;transition:background-color .2s ease,transform .2s ease;
+}
+.rword:hover{background:#F6E3B8}
+.rword.lit{background:var(--sun);transform:scale(1.08)}
+.rword.read{color:var(--grass)}
+.phase{display:flex;gap:8px;align-items:center;justify-content:center}
+.phase i{
+  width:34px;height:10px;border-radius:999px;background:rgba(255,255,255,.22);
+  border:2px solid rgba(255,255,255,.4);
+}
+.phase i.on{background:var(--star);border-color:#fff}
 </style>
 
 <div class="app">
@@ -400,6 +463,10 @@ select.pill{max-width:100%;appearance:none;-webkit-appearance:none;padding-right
       <span class="pipwrap" id="pipHome"></span>
       <div class="bubble" id="pipSays">Hello! I'm Pip.</div>
       <button class="iconbtn again" id="pipAgain" title="Say it again" aria-label="Say it again">🔊</button>
+    </div>
+    <div class="shelf" style="margin-bottom:26px">
+      <div class="shelf-head"><h2>My Reading Path</h2><span class="rule"></span></div>
+      <div class="path" id="path"></div>
     </div>
     <div class="shelf" style="margin-bottom:26px">
       <div class="shelf-head"><h2>Letters &amp; Sounds</h2><span class="rule"></span></div>
@@ -490,7 +557,7 @@ const TILECOLORS = ["t-poppy","t-sky","t-grape","t-grass","t-sun"];
    ===================================================================== */
 const KEY = "alphabet-clubhouse-v1";
 const defaults = {stars:0, seen:{}, best:{}, caseMode:"upper", speech:true, rate:0.92,
-                  voiceName:null, sfx:true, kidName:"", stickers:[], style:"teacher"};
+                  voiceName:null, sfx:true, kidName:"", stickers:[], style:"teacher", lessons:{}};
 let S = Object.assign({}, defaults);
 try{ const raw = localStorage.getItem(KEY); if(raw) S = Object.assign({}, defaults, JSON.parse(raw)); }catch(e){}
 /* Older saves used slower rates that made the voice drone. */
@@ -498,6 +565,7 @@ const RATE_MIGRATE = {"0.68":0.78, "0.82":0.92, "0.98":1.05};
 if(RATE_MIGRATE[String(S.rate)]) S.rate = RATE_MIGRATE[String(S.rate)];
 /* copy, never share the array in defaults */
 S.stickers = (S.stickers || []).slice();
+S.lessons  = Object.assign({}, S.lessons);
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 function addStar(n){
   S.stars += (n||1);
@@ -597,6 +665,9 @@ function say(text, opts){
   return speakQueue;
 }
 function pause(ms){ speakQueue = speakQueue.then(() => new Promise(r => setTimeout(r, ms))); return speakQueue; }
+/* Queue a DOM change in speech order, so a highlight lands exactly with
+   the sound it belongs to rather than racing it. */
+function act(fn){ speakQueue = speakQueue.then(() => { try{ fn(); }catch(e){} }); return speakQueue; }
 /* Standing alone, a capital A is read as the article "uh". The rest of
    the alphabet already reads as its own letter name. */
 function letterName(l){ return l.toUpperCase() === "A" ? "Ay" : l.toUpperCase(); }
@@ -725,7 +796,7 @@ function openActivity(id){
   document.getElementById("play").classList.remove("hidden");
   document.getElementById("homeBtn").classList.remove("hidden");
   document.getElementById("pageTitle").textContent = a.name;
-  playArea.innerHTML = ""; dotsEl.innerHTML = "";
+  playArea.innerHTML = ""; dotsEl.innerHTML = ""; dotsEl.className = "progress";
   const sb = document.getElementById("sayBtn");
   if(sb && !sb.querySelector(".pipwrap")) sb.innerHTML = '<span class="pipwrap">' + PIP_SVG + '</span>';
   if("speechSynthesis" in window) speechSynthesis.cancel();
@@ -760,8 +831,10 @@ function renderHome(){
   const phon = document.getElementById("cardsPhonics");
   const trak = document.getElementById("cardsTrackpad");
   phon.innerHTML = ""; trak.innerHTML = "";
+  renderPath();
   Object.keys(ACTIVITIES).forEach(id => {
     const a = ACTIVITIES[id];
+    if(a.hidden) return;
     const b = document.createElement("button");
     b.className = "card " + a.color;
     const best = S.best[id] || 0;
@@ -920,6 +993,7 @@ ACTIVITIES.which = {
     wrap.className = "tilewrap";
     playArea.appendChild(wrap);
     function next(){
+      let locked = false;   /* one answer per round, however fast she taps */
       if(round >= 5){
         cheer("5 out of 5!", "You found every letter.", 2600);
         setTimeout(goHome, gap(2600)); return;
@@ -939,6 +1013,7 @@ ACTIVITIES.which = {
         const t = tiles[i];
         t.addEventListener("click", () => {
           if(l === target){
+            if(locked) return; locked = true;
             flashRight(t); addStar(); markSeen(l); got++; round++;
             record("which", got);
             sayFull(l, {now:true, lead: praise()});
@@ -982,6 +1057,7 @@ ACTIVITIES.sounds = {
       say(d.sound + "?", slow);
     }
     function next(){
+      let locked = false;
       if(round >= 5){
         cheer("Sound expert!", "5 sounds matched.", 2600);
         setTimeout(goHome, gap(2600)); return;
@@ -999,6 +1075,7 @@ ACTIVITIES.sounds = {
         const t = makeTile(l, TILECOLORS[i % TILECOLORS.length]);
         t.addEventListener("click", () => {
           if(l === d.l){
+            if(locked) return; locked = true;
             flashRight(t); addStar(); markSeen(l); got++; round++;
             record("sounds", Math.min(5, got));
             sayFull(l, {now:true, lead: praise(), invite:true});
@@ -1032,6 +1109,7 @@ ACTIVITIES.begin = {
     wrap.className = "tilewrap";
     playArea.append(pic, wrap);
     function next(){
+      let locked = false;
       if(round >= 5){
         cheer("Super sounding!", "5 beginning sounds.", 2600);
         setTimeout(goHome, gap(2600)); return;
@@ -1053,6 +1131,7 @@ ACTIVITIES.begin = {
         const t = makeTile(l, TILECOLORS[i % TILECOLORS.length]);
         t.addEventListener("click", () => {
           if(l === d.l){
+            if(locked) return; locked = true;
             flashRight(t); addStar(); markSeen(l); got++; round++;
             record("begin", got);
             beats([praise(), 220, d.word + "!", 200,
@@ -1383,6 +1462,7 @@ ACTIVITIES.scroll = {
     hint.textContent = "Put two fingers on the trackpad and slide them up or down.";
     playArea.append(box, hint);
     function next(){
+      let locked = false;
       if(round >= 4){
         cheer("You found them all!", "Scrolling like a pro.", 2600);
         setTimeout(goHome, gap(2600)); return;
@@ -1399,6 +1479,7 @@ ACTIVITIES.scroll = {
         t.style.cssText = "width:100%;height:72px;font-size:40px;flex:none";
         t.addEventListener("click", () => {
           if(l === target){
+            if(locked) return; locked = true;
             flashRight(t); addStar(); markSeen(l); got++; round++;
             record("scroll", Math.round(got*5/4));
             say(praise(), {now:true}); sayLetterName(l);
@@ -1667,6 +1748,279 @@ function sfxClap(n){
 }
 
 /* =====================================================================
+   THE READING PATH
+   Letters are introduced in phonics order, not alphabetical order:
+   s a t p i n first, because those six make more real words than any
+   other six in English (sat, pit, tap, nip, pan...). Going A, B, C
+   means a child cannot read a single word until she is most of the way
+   through the alphabet. Each step is a short guided lesson that ends
+   with her reading a real sentence made only of sounds she has met.
+   ===================================================================== */
+const PATH = [
+  {letters:["s","a","t","p","i","n"],
+   words:[["pin","📌"],["pan","🍳"],["tin","🥫"],["tap","🚰"],["nap","😴"],["pit","🕳️"]],
+   read:["Pat sat.","A tin pan.","Nip it!","Tip a pin."]},
+  {letters:["c","k","e","h","r","m","d"],
+   words:[["cat","🐱"],["hat","🎩"],["hen","🐔"],["rat","🐀"],["cap","🧢"],["map","🗺️"]],
+   read:["A red hen.","Dad had a map.","A cat ran.","Sam met a rat."]},
+  {letters:["g","o","u","l","f","b"],
+   words:[["dog","🐶"],["log","🪵"],["bug","🐛"],["bus","🚌"],["bag","🎒"],["bed","🛏️"]],
+   read:["A big dog.","A bug is fun.","Bob got mud.","A log in fog."]},
+  {letters:["j","z","w","v","y","x","q"],
+   words:[["jam","🍓"],["van","🚐"],["box","📦"],["fox","🦊"],["jet","✈️"],["web","🕸️"]],
+   read:["A fox in a box.","Jim has a jet.","Zip it up!","A wet web."]}
+];
+const STEP_NAMES = ["Step 1","Step 2","Step 3","Step 4"];
+function stepUnlocked(i){ return i === 0 || !!(S.lessons && S.lessons[i-1]); }
+function renderPath(){
+  const el = document.getElementById("path"); if(!el) return;
+  el.innerHTML = "";
+  PATH.forEach((st, i) => {
+    const done = !!(S.lessons && S.lessons[i]);
+    const open = stepUnlocked(i);
+    const b = document.createElement("button");
+    b.className = "step" + (open ? "" : " locked");
+    b.innerHTML =
+      '<span class="stone ' + (done ? "done" : (open ? "on" : "locked")) + '">' +
+        (done ? "★" : (open ? (i+1) : "🔒")) + '</span>' +
+        '<span class="lets">' + st.letters.map(show).join(" ") + '</span>' +
+        '<span class="cap">' + (done ? "Done" : (open ? STEP_NAMES[i] : "Locked")) + '</span>';
+    b.addEventListener("click", () => {
+      if(!open){
+        pipFace("oops", 900);
+        say("Let's finish step " + i + " first!", {now:true});
+        return;
+      }
+      startLesson(i);
+    });
+    b.addEventListener("pointerenter", () => say(STEP_NAMES[i], {now:true}));
+    el.appendChild(b);
+  });
+}
+
+/* ---- continuous blending: hold each sound, then swoop them together ---- */
+function swoopSvg(count, tileW, gapW){
+  const w = count*tileW + (count-1)*gapW, pad = 10, y0 = 6, dip = 30;
+  let d = "M " + pad + " " + y0;
+  for(let i = 0; i < count - 1; i++){
+    const x1 = pad + (i + 0.5)*(tileW + gapW) + tileW/2;
+    const x2 = pad + (i + 1)*(tileW + gapW);
+    d += " Q " + x1 + " " + (y0 + dip) + " " + x2 + " " + y0;
+  }
+  return '<svg class="swoop" viewBox="0 0 ' + (w + pad*2) + ' 42" width="' + (w + pad*2) + '" height="42">' +
+         '<path d="' + d + '"/></svg>';
+}
+function runSwoop(svg, ms){
+  const path = svg && svg.querySelector("path"); if(!path) return;
+  let len = 0; try{ len = path.getTotalLength(); }catch(e){ return; }
+  path.style.setProperty("--len", len);
+  path.style.setProperty("--dur", (ms || 1100) / 1000 + "s");
+  path.classList.remove("go");
+  void path.getBoundingClientRect();
+  path.classList.add("go");
+}
+/* Light each letter as its sound is held, then say the whole word. */
+function blendWord(word, row, swoop, done){
+  const tiles = Array.from(row.querySelectorAll(".tile, .slot"));
+  act(() => tiles.forEach(t => t.classList.remove("lit","all")));
+  word.split("").forEach((l, i) => {
+    act(() => { tiles.forEach(t => t.classList.remove("lit")); if(tiles[i]) tiles[i].classList.add("lit"); });
+    say((BY[l] ? BY[l].sound : l), {rate: 0.55});
+    pause(120);
+  });
+  act(() => {
+    tiles.forEach(t => { t.classList.remove("lit"); t.classList.add("all"); });
+    if(swoop) runSwoop(swoop, 900);
+  });
+  pause(220);
+  say(word + "!", {rate: 0.8});
+  if(done) act(done);
+}
+
+/* ---- the guided lesson: meet the sounds, find them, build a word,
+        then read a real sentence made only of what she has met ---- */
+let currentStep = 0;
+function startLesson(i){ currentStep = i; openActivity("lesson"); }
+ACTIVITIES.lesson = {
+  name:"Reading Lesson", group:"path", color:"c-sun", emoji:"📖", skill:"lesson", what:"", hidden:true,
+  start(){
+    const st = PATH[currentStep];
+    document.getElementById("pageTitle").textContent = STEP_NAMES[currentStep];
+    const box = document.createElement("div");
+    box.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:16px;width:100%";
+    playArea.appendChild(box);
+
+    function setPhase(k){
+      dotsEl.className = "phase"; dotsEl.innerHTML = "";
+      for(let i = 0; i < 4; i++){
+        const e = document.createElement("i"); if(i < k) e.className = "on"; dotsEl.appendChild(e);
+      }
+    }
+    function run(i){
+      setPhase(i);
+      box.innerHTML = "";
+      if(i >= 4){ finish(); return; }
+      [meet, find, buildPhase, readPhase][i]();
+    }
+    function coachLine(text){
+      const c = document.createElement("div");
+      c.className = "coach";
+      c.innerHTML = "<b>Grown-ups:</b> " + text;
+      return c;
+    }
+
+    /* 1 — meet the sounds */
+    function meet(){
+      const ls = sample(st.letters, Math.min(3, st.letters.length));
+      let k = 0;
+      const pic = document.createElement("div"); pic.className = "pic";
+      const one = document.createElement("div"); one.className = "tilewrap";
+      box.append(coachLine("sit with her. When the <b>Your turn!</b> badge shows, say the sound out loud together."), pic, one);
+      function nextLetter(){
+        if(k >= ls.length){ run(1); return; }
+        const l = ls[k++];
+        one.innerHTML = "";
+        one.appendChild(makeTile(l, pick(TILECOLORS)));
+        pic.textContent = BY[l].emoji;
+        setPrompt('This one says <b>' + show(l) + '</b>', "");
+        sayFull(l, {now:true, invite:true});
+        markSeen(l);
+        act(nextLetter);
+      }
+      nextLetter();
+    }
+
+    /* 2 — find it among others */
+    function find(){
+      let r = 0;
+      const wrap = document.createElement("div"); wrap.className = "tilewrap";
+      box.append(coachLine("let her point at the screen before she clicks. Naming it out loud helps."), wrap);
+      function round(){
+        let locked = false;
+        if(r >= 3){ run(2); return; }
+        const target = pick(st.letters);
+        const opts = shuffle(sample(st.letters.concat(ALPHA), 2, [target]).concat([target]));
+        wrap.innerHTML = "";
+        const tiles = opts.map((l, i) => makeTile(l, TILECOLORS[i % TILECOLORS.length]));
+        setPrompt('Find <b>' + tiles[opts.indexOf(target)].textContent + '</b>',
+                  "Can you find " + letterName(target) + "?");
+        waitBeat(300); echo(letterName(target) + "!");
+        opts.forEach((l, i) => {
+          const t = tiles[i];
+          t.addEventListener("click", () => {
+            if(l === target){
+              if(locked) return; locked = true;
+              flashRight(t); addStar(); markSeen(l); r++;
+              sayFull(l, {now:true, lead: praise()});
+              setTimeout(round, gap(1500));
+            } else {
+              flashWrong(t); say(again(), {now:true});
+            }
+          });
+          wrap.appendChild(t);
+        });
+      }
+      round();
+    }
+
+    /* 3 — build it, then blend it */
+    function buildPhase(){
+      let r = 0, word = null;
+      const pic = document.createElement("div"); pic.className = "pic";
+      const slots = document.createElement("div"); slots.className = "slots";
+      const sw = document.createElement("div");
+      const wrap = document.createElement("div"); wrap.className = "tilewrap";
+      box.append(coachLine("as each letter lands she hears its sound. When the word is done, listen to it blend."),
+                 pic, slots, sw, wrap);
+      const drag = dragSystem({
+        onDrop(tile, slot){
+          if(slot.classList.contains("filled")) return;
+          if(tile.dataset.letter === slot.dataset.want){
+            slot.textContent = tile.textContent;
+            slot.classList.add("filled");
+            tile.remove();
+            say(BY[slot.dataset.want].sound, {now:true, rate: 0.6});
+            check();
+          } else {
+            flashWrong(tile);
+            say("That one says " + BY[tile.dataset.letter].sound + ". Let's try a different one.", {now:true});
+          }
+        },
+        onPick(tile){ say(BY[tile.dataset.letter].sound, {now:true, rate: 0.6}); }
+      });
+      onCleanup(() => drag.reset());
+      function check(){
+        if(slots.querySelectorAll(".filled").length !== word[0].length) return;
+        addStar(2); word[0].split("").forEach(markSeen);
+        const tw = slots.querySelector(".slot").getBoundingClientRect().width || 104;
+        sw.innerHTML = swoopSvg(word[0].length, tw, 12);
+        say("Now let's blend it!", {now:true});
+        blendWord(word[0], slots, sw.querySelector("svg"), () => {
+          r++;
+          setTimeout(nextWord, 1400);
+        });
+      }
+      function nextWord(){
+        if(r >= 2){ run(3); return; }
+        drag.reset();
+        word = pick(st.words);
+        pic.textContent = word[1];
+        slots.innerHTML = ""; wrap.innerHTML = ""; sw.innerHTML = "";
+        setPrompt('Build <b>' + word[0].split("").map(show).join("") + '</b>', "Let's build the word " + word[0]);
+        word[0].split("").forEach(l => {
+          const sl = document.createElement("div");
+          sl.className = "slot"; sl.dataset.want = l;
+          drag.target(sl); slots.appendChild(sl);
+        });
+        shuffle(word[0].split("").concat(sample(st.letters, 2, word[0].split("")))).forEach((l, i) => {
+          const t = makeTile(l, TILECOLORS[i % TILECOLORS.length]);
+          drag.tile(t); wrap.appendChild(t);
+        });
+      }
+      nextWord();
+    }
+
+    /* 4 — read it for real */
+    function readPhase(){
+      const sent = pick(st.read);
+      const rd = document.createElement("div"); rd.className = "reader";
+      sent.split(" ").forEach(w => {
+        const b = document.createElement("button");
+        b.className = "rword"; b.textContent = w;
+        const clean = w.replace(/[^A-Za-z]/g, "").toLowerCase();
+        b.addEventListener("click", () => {
+          document.querySelectorAll(".rword").forEach(x => x.classList.remove("lit"));
+          b.classList.add("lit"); b.classList.add("read");
+          if(clean.length > 1 && clean.length <= 4 && clean.split("").every(c => BY[c])){
+            say("", {now:true});
+            clean.split("").forEach(c => { say(BY[c].sound, {rate: 0.55}); pause(110); });
+            pause(180); say(clean + "!", {rate: 0.8});
+          } else {
+            say(clean, {now:true});
+          }
+        });
+        rd.appendChild(b);
+      });
+      const done = document.createElement("button");
+      done.className = "pill"; done.textContent = "I read it! ⭐";
+      done.addEventListener("click", () => { addStar(3); run(4); });
+      box.append(coachLine("point under each word as she sounds it out. Tap any word to hear it blended."), rd, done);
+      setPrompt('Read it together', "");
+      beats(["Now let's read it together!", 300, {t: sent, rate: 0.68}, 260,
+             "Tap a word if you want to hear it again."], true);
+    }
+
+    function finish(){
+      S.lessons[currentStep] = true; save();
+      cheer("You read it! 📖", STEP_NAMES[currentStep] + " finished.", 3200);
+      setTimeout(goHome, gap(3200));
+    }
+
+    run(0);
+  }
+};
+
+/* =====================================================================
    STICKERS — five stars buys one. Something that visibly accumulates
    is worth more to a five-year-old than any number.
    ===================================================================== */
@@ -1830,7 +2184,8 @@ document.getElementById("settingsBtn").addEventListener("click", () => {
       host.querySelector("#resetBtn").addEventListener("click", e => {
         if(e.target.dataset.sure){
           S = Object.assign({}, defaults, {caseMode:S.caseMode, speech:S.speech, rate:S.rate,
-                                           voiceName:S.voiceName, sfx:S.sfx, kidName:S.kidName, stickers:[]});
+                                           voiceName:S.voiceName, sfx:S.sfx, kidName:S.kidName,
+                                           style:S.style, stickers:[], lessons:{}});
           save(); closeSheet(); renderHome();
         } else { e.target.dataset.sure = "1"; e.target.textContent = "Really clear? Tap again"; }
       });
@@ -1866,7 +2221,7 @@ let warmed = false;
 addEventListener("pointerdown", () => {
   if(warmed) return;
   warmed = true;
-  if("speechSynthesis" in window && !voiceReady) pickVoice();
+  if("speechSynthesis" in window && !voiceReady) chooseVoice();
   ac();                       /* the first tap is also the permission for sound */
   pipFace("happy", 900);
   pipHello(true);

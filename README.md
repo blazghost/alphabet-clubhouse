@@ -39,6 +39,27 @@ Open `index.html` in any browser, or use the published link.
 - **Her name.** Optional, set in Settings, and woven into about half the praise
   so it is her being congratulated, not a generic player.
 
+## The reading path
+
+Letters are introduced in phonics order, not alphabetical order: **s a t p i n**
+first, because those six make more real words than any other six in English
+(sat, pit, tap, nip, pan, tin). Going A, B, C means a child cannot read a single
+word until she is most of the way through the alphabet.
+
+Four steps, each unlocking the next. A step is a short guided lesson in four
+phases: meet three sounds (with a *Your turn!* pause on each), find them among
+other letters, build two words and hear them blended, then read a real sentence
+made only of sounds she has already met. Every word and sentence in the path is
+checked to be decodable from the letters taught up to that point.
+
+Blending is continuous: each letter lifts and lights as its sound is held, a
+swoop is drawn underneath joining them, and then the whole word is said. That
+join is the actual reading skill — three separate sounds are not a word until
+they are run together.
+
+Each phase carries a line for the adult, because at this age the app is a script
+for the grown-up sitting next to her as much as it is a game.
+
 ## The ten activities
 
 Stars fly to the counter as she earns them, five stars wins a sticker for the
