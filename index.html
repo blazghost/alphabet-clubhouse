@@ -190,6 +190,11 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:n
 .row:last-of-type{border-bottom:none}
 .row .lab{font-weight:800;font-size:18px;margin-right:auto}
 .seg{display:flex;border:3px solid var(--ink);border-radius:999px;overflow:hidden;background:#fff}
+select.pill{max-width:100%;appearance:none;-webkit-appearance:none;padding-right:34px;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);
+  background-position:calc(100% - 19px) 19px,calc(100% - 13px) 19px;background-size:6px 6px,6px 6px;background-repeat:no-repeat}
+.notice{background:#FDF3DF;border:3px solid var(--sun);border-radius:16px;padding:12px 14px;font-size:15px;line-height:1.5;font-weight:600}
+.notice code{font-family:ui-monospace,Menlo,Consolas,monospace;background:#fff;border:2px solid var(--manila-deep);border-radius:6px;padding:1px 6px;font-size:14px}
 .seg button{padding:8px 16px;font-weight:800;font-size:16px;font-family:var(--font-letter)}
 .seg button[aria-pressed="true"]{background:var(--board);color:#FFF7E6}
 .grid26{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:8px;margin-top:6px}
@@ -321,27 +326,27 @@ const LETTERS = [
   {l:"c", sound:"kuh",  word:"cat",       emoji:"🐱"},
   {l:"d", sound:"duh",  word:"dog",       emoji:"🐶"},
   {l:"e", sound:"eh",   word:"egg",       emoji:"🥚"},
-  {l:"f", sound:"ffff", word:"fish",      emoji:"🐟"},
+  {l:"f", sound:"fff", word:"fish",      emoji:"🐟"},
   {l:"g", sound:"guh",  word:"goat",      emoji:"🐐"},
   {l:"h", sound:"huh",  word:"hat",       emoji:"🎩"},
   {l:"i", sound:"ih",   word:"insect",    emoji:"🦗"},
   {l:"j", sound:"juh",  word:"jet",       emoji:"✈️"},
   {l:"k", sound:"kuh",  word:"key",       emoji:"🔑"},
-  {l:"l", sound:"llll", word:"leaf",      emoji:"🍃"},
-  {l:"m", sound:"mmmm", word:"moon",      emoji:"🌙"},
-  {l:"n", sound:"nnnn", word:"nest",      emoji:"🪺"},
+  {l:"l", sound:"lll", word:"leaf",      emoji:"🍃"},
+  {l:"m", sound:"mmm", word:"moon",      emoji:"🌙"},
+  {l:"n", sound:"nnn", word:"nest",      emoji:"🪺"},
   {l:"o", sound:"ah",   word:"octopus",   emoji:"🐙"},
   {l:"p", sound:"puh",  word:"pig",       emoji:"🐷"},
   {l:"q", sound:"kwuh", word:"queen",     emoji:"👑"},
-  {l:"r", sound:"rrrr", word:"rain",      emoji:"🌧️"},
-  {l:"s", sound:"ssss", word:"sun",       emoji:"☀️"},
+  {l:"r", sound:"rrr", word:"rain",      emoji:"🌧️"},
+  {l:"s", sound:"sss", word:"sun",       emoji:"☀️"},
   {l:"t", sound:"tuh",  word:"tree",      emoji:"🌳"},
   {l:"u", sound:"uh",   word:"umbrella",  emoji:"☂️"},
-  {l:"v", sound:"vvvv", word:"van",       emoji:"🚐"},
+  {l:"v", sound:"vvv", word:"van",       emoji:"🚐"},
   {l:"w", sound:"wuh",  word:"web",       emoji:"🕸️"},
   {l:"x", sound:"ks",   word:"fox",       emoji:"🦊", final:true},
   {l:"y", sound:"yuh",  word:"yarn",      emoji:"🧶"},
-  {l:"z", sound:"zzzz", word:"zebra",     emoji:"🦓"}
+  {l:"z", sound:"zzz", word:"zebra",     emoji:"🦓"}
 ];
 const BY = Object.fromEntries(LETTERS.map(o => [o.l, o]));
 const ALPHA = LETTERS.map(o => o.l);
@@ -360,9 +365,12 @@ const TILECOLORS = ["t-poppy","t-sky","t-grape","t-grass","t-sun"];
    STATE
    ===================================================================== */
 const KEY = "alphabet-clubhouse-v1";
-const defaults = {stars:0, seen:{}, best:{}, caseMode:"upper", speech:true, rate:0.82};
+const defaults = {stars:0, seen:{}, best:{}, caseMode:"upper", speech:true, rate:0.92, voiceName:null};
 let S = Object.assign({}, defaults);
 try{ const raw = localStorage.getItem(KEY); if(raw) S = Object.assign({}, defaults, JSON.parse(raw)); }catch(e){}
+/* Older saves used slower rates that made the voice drone. */
+const RATE_MIGRATE = {"0.68":0.78, "0.82":0.92, "0.98":1.05};
+if(RATE_MIGRATE[String(S.rate)]) S.rate = RATE_MIGRATE[String(S.rate)];
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 function addStar(n){ S.stars += (n||1); document.getElementById("starCount").textContent = S.stars; save(); }
 function markSeen(l){ S.seen[l] = (S.seen[l]||0)+1; save(); }
@@ -376,35 +384,69 @@ function show(l){
 /* =====================================================================
    SPEECH  — nothing on screen requires reading, so this does the work.
    ===================================================================== */
-let voice = null, voiceReady = false;
-function pickVoice(){
-  const vs = speechSynthesis.getVoices();
-  if(!vs.length) return;
-  const en = vs.filter(v => /^en(-|_)?/i.test(v.lang));
-  const pool = en.length ? en : vs;
-  const liked = ["Google US English","Samantha","Microsoft Aria","Microsoft Jenny","Karen","Moira","Google UK English Female"];
-  voice = pool.find(v => liked.some(n => v.name.includes(n)))
-       || pool.find(v => /female/i.test(v.name))
-       || pool.find(v => /en-US/i.test(v.lang))
-       || pool[0];
+let voice = null, voiceReady = false, voiceList = [];
+/* Which voice gets picked matters more than anything else here. Modern
+   neural voices ("Natural", "Online", "Enhanced") sound human; the old
+   formant synths (eSpeak, Festival, Pico, the legacy SAPI "Desktop"
+   voices) are the ones that sound like a robot. Rank, do not guess. */
+const V_GREAT = /(natural|neural|online|enhanced|premium|siri)/i;
+const V_POOR  = /(espeak|festival|pico|flite|eloquence|compact|robo)/i;
+const V_NAMED = ["Google US English","Google UK English Female","Samantha","Ava","Allison",
+                 "Aria","Jenny","Michelle","Sonia","Libby","Emma","Karen","Moira","Serena","Joanna","Nicky"];
+function scoreVoice(v){
+  let sc = 0;
+  const nm = v.name || "";
+  if(V_GREAT.test(nm)) sc += 45;
+  if(V_NAMED.some(x => nm.includes(x))) sc += 30;
+  if(V_POOR.test(nm)) sc -= 70;
+  if(/desktop/i.test(nm)) sc -= 20;        /* legacy SAPI5 */
+  if(v.localService === false) sc += 18;   /* network voices are usually the neural ones */
+  const lang = (v.lang || "").replace("_","-");
+  if(/^en-US/i.test(lang)) sc += 25;
+  else if(/^en-(GB|AU|CA|IE|NZ)/i.test(lang)) sc += 16;
+  else if(/^en/i.test(lang)) sc += 8;
+  else sc -= 45;
+  if(/female|woman/i.test(nm)) sc += 6;
+  return sc;
+}
+function rankedVoices(){
+  const vs = ("speechSynthesis" in window) ? speechSynthesis.getVoices() : [];
+  return vs.slice().map(v => ({v, sc: scoreVoice(v)}))
+           .sort((a,b) => b.sc - a.sc).map(o => o.v);
+}
+function chooseVoice(){
+  voiceList = rankedVoices();
+  if(!voiceList.length){ voice = null; return; }
+  voice = (S.voiceName && voiceList.find(v => v.name === S.voiceName)) || voiceList[0];
   voiceReady = true;
 }
 if("speechSynthesis" in window){
-  pickVoice();
-  speechSynthesis.onvoiceschanged = pickVoice;
+  chooseVoice();
+  speechSynthesis.onvoiceschanged = chooseVoice;
 }
 let speakQueue = Promise.resolve();
 function speakNow(text, opts){
   return new Promise(res => {
     if(!S.speech || !("speechSynthesis" in window) || !text) return res();
+    opts = opts || {};
+    if(!voice && !voiceReady) chooseVoice();
     const u = new SpeechSynthesisUtterance(text);
     if(voice) u.voice = voice;
     u.lang = (voice && voice.lang) || "en-US";
-    u.rate = (opts && opts.rate) || S.rate;
-    u.pitch = (opts && opts.pitch) || 1.12;
-    u.onend = res; u.onerror = res;
+    /* A hair of jitter keeps the twentieth "Nice work!" from being bit
+       for bit the same sound as the first, which is what makes a
+       repeated phrase read as canned. */
+    const jitter = 0.98 + Math.random() * 0.04;
+    u.rate  = (opts.rate  || S.rate) * jitter;
+    u.pitch = (opts.pitch || 1.03) * jitter;   /* pitched-up synth = chipmunk robot */
+    let done = false;
+    const finish = () => { if(done) return; done = true; clearTimeout(guard); res(); };
+    u.onend = finish; u.onerror = finish;
+    /* Generous: if this fires early the next line talks over this one,
+       which garbles both. Long enough that it only ever catches a hang. */
+    const guard = setTimeout(finish, 3000 + text.length * 170 / (u.rate || 1));
+    if(speechSynthesis.paused) speechSynthesis.resume();
     speechSynthesis.speak(u);
-    setTimeout(res, 400 + text.length * 130); /* belt-and-braces: never hang the queue */
   });
 }
 /* say("...") queues; say("...", {now:true}) interrupts (a child taps fast). */
@@ -415,17 +457,23 @@ function say(text, opts){
   return speakQueue;
 }
 function pause(ms){ speakQueue = speakQueue.then(() => new Promise(r => setTimeout(r, ms))); return speakQueue; }
-function sayLetterName(l){ return say(l.toUpperCase() === "A" ? "Ay" : l.toUpperCase()); }
-/* "B says buh, like ball." */
-function sayFull(l, interrupt){
+/* Standing alone, a capital A is read as the article "uh". The rest of
+   the alphabet already reads as its own letter name. */
+function letterName(l){ return l.toUpperCase() === "A" ? "Ay" : l.toUpperCase(); }
+function sayLetterName(l){ return say(letterName(l)); }
+/* One utterance, not four. Spoken as a single sentence the voice carries
+   its intonation across the whole phrase; chopped into pieces every
+   fragment restarts flat with a gap, which is the robot sound. */
+function sayFull(l, opts){
+  opts = opts || {};
   const d = BY[l];
-  say(l.toUpperCase(), {now: !!interrupt});
-  say("says");
-  say(d.sound, {rate: Math.max(0.6, S.rate - 0.15)});
-  say("like " + d.word + "!");
+  const lead = opts.lead ? opts.lead + " " : "";
+  say(lead + letterName(l) + " says " + d.sound + ", like " + d.word + "!", {now: !!opts.now});
 }
-const PRAISE = ["Yes!","Great job!","You got it!","Nice work!","Perfect!","Well done!","That's it!"];
-const AGAIN  = ["Nearly! Try again.","Not quite — have another go.","Try one more time.","Close! Try again."];
+const PRAISE = ["Yes!","Great job!","You got it!","Nice work!","Perfect!","Well done!","That's it!",
+                "Lovely!","Brilliant!","You're so quick!","Spot on!","Clever girl!"];
+const AGAIN  = ["Nearly! Try again.","Not quite — have another go.","Try one more time.",
+                "Close! Try again.","Ooh, so close. One more go.","Almost! Have another look."];
 const pick = a => a[Math.floor(Math.random() * a.length)];
 function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function sample(arr, n, exclude){
@@ -661,7 +709,7 @@ ACTIVITIES.board = {
       const t = makeTile(l, TILECOLORS[i % TILECOLORS.length], true);
       t.addEventListener("click", () => {
         flashRight(t);
-        sayFull(l, true);
+        sayFull(l, {now:true});
         markSeen(l);
         document.getElementById("bPic").textContent = BY[l].emoji;
         document.getElementById("bWord").textContent = show(l) + "   " + BY[l].word;
@@ -698,20 +746,21 @@ ACTIVITIES.which = {
       const opts = shuffle(others.concat([target]));
       wrap.innerHTML = "";
       const tiles = opts.map((l, i) => makeTile(l, TILECOLORS[i % TILECOLORS.length]));
-      setPrompt('Find the letter <b>' + tiles[opts.indexOf(target)].textContent + '</b>', "Find the letter " + target.toUpperCase());
+      const ASKS = ["Can you find the letter ", "Find the letter ", "Where is the letter ", "Show me the letter "];
+      setPrompt('Find the letter <b>' + tiles[opts.indexOf(target)].textContent + '</b>',
+                pick(ASKS) + letterName(target) + "?");
       opts.forEach((l, i) => {
         const t = tiles[i];
         t.addEventListener("click", () => {
           if(l === target){
             flashRight(t); addStar(); markSeen(l); got++; round++;
             record("which", got);
-            say(pick(PRAISE), {now:true}); sayFull(l);
+            sayFull(l, {now:true, lead: pick(PRAISE)});
             setDots(got, 5);
             setTimeout(next, 1900);
           } else {
             flashWrong(t);
-            say(pick(AGAIN), {now:true});
-            say("Find " + target.toUpperCase());
+            say(pick(AGAIN) + " Find the letter " + letterName(target) + ".", {now:true});
           }
         });
         wrap.appendChild(t);
@@ -733,12 +782,12 @@ ACTIVITIES.sounds = {
     mouth.className = "pic"; mouth.textContent = "👂";
     const wrap = document.createElement("div"); wrap.className = "tilewrap";
     playArea.append(mouth, wrap);
-    const slow = {rate: Math.max(0.55, S.rate - 0.2)};
+    const slow = {rate: Math.max(0.55, S.rate - 0.25)};
     function askAgain(d){
       say("Which letter says", {now:true});
-      say(d.sound, slow);
-      pause(260);
-      say(d.sound, slow);
+      say(d.sound + "?", slow);
+      pause(420);
+      say(d.sound + "?", slow);
     }
     function next(){
       if(round >= 5){
@@ -760,13 +809,12 @@ ACTIVITIES.sounds = {
           if(l === d.l){
             flashRight(t); addStar(); markSeen(l); got++; round++;
             record("sounds", Math.min(5, got));
-            say(pick(PRAISE), {now:true});
-            sayFull(l);
+            sayFull(l, {now:true, lead: pick(PRAISE)});
             setDots(got, 5);
             setTimeout(next, 2200);
           } else {
             flashWrong(t);
-            say(l.toUpperCase() + " says " + BY[l].sound + ".", {now:true});
+            say(letterName(l) + " says " + BY[l].sound + ". Listen again.", {now:true});
             askAgain(d);
           }
         });
@@ -803,10 +851,12 @@ ACTIVITIES.begin = {
       pic.textContent = d.emoji;
       wrap.innerHTML = "";
       setPrompt('What does <b>' + d.word + '</b> start with?', "");
+      /* The isolated sound is the teaching beat, so it earns its own
+         slower utterance; everything else flows as one question. */
       say(d.word + "!", {now:true});
-      say(d.sound, {rate: Math.max(0.6, S.rate - 0.15)});
-      say(d.word + ". Which letter does it start with?");
-      lastPrompt = d.word + ". Which letter does it start with?";
+      say(d.sound, {rate: Math.max(0.55, S.rate - 0.25)});
+      say(d.sound + ", " + d.word + ". Which letter does " + d.word + " start with?");
+      lastPrompt = "Which letter does " + d.word + " start with?";
       opts.forEach((l, i) => {
         const t = makeTile(l, TILECOLORS[i % TILECOLORS.length]);
         t.addEventListener("click", () => {
@@ -819,8 +869,8 @@ ACTIVITIES.begin = {
             setTimeout(next, 2100);
           } else {
             flashWrong(t);
-            say(pick(AGAIN), {now:true});
-            say("Listen: " + d.sound, {rate: Math.max(0.6, S.rate - 0.15)});
+            say(pick(AGAIN) + " Listen.", {now:true});
+            say(d.sound, {rate: Math.max(0.55, S.rate - 0.25)});
           }
         });
         wrap.appendChild(t);
@@ -857,7 +907,7 @@ ACTIVITIES.build = {
           check();
         } else {
           flashWrong(tile);
-          say("That one makes " + BY[tile.dataset.letter].sound + ". Try another.", {now:true});
+          say("That one says " + BY[tile.dataset.letter].sound + ". Try another one!", {now:true});
         }
       },
       onPick(tile){ say(BY[tile.dataset.letter].sound, {now:true, rate: Math.max(0.6, S.rate - 0.2)}); }
@@ -985,13 +1035,13 @@ ACTIVITIES.bubbles = {
         bubbles = bubbles.filter(b => b !== hit);
         got++; addStar(); markSeen(target); record("bubbles", Math.min(5, got));
         setDots(Math.min(got,5), 5);
-        say(pick(PRAISE), {now:true}); sayFull(target);
+        sayFull(target, {now:true, lead: pick(PRAISE)});
         if(got >= 5){
           cheer("Pop pop pop!", "5 bubbles popped.", 2600);
           setTimeout(goHome, 2600);
         } else setTimeout(ask, 1800);
       } else {
-        say("That is " + hit.l.toUpperCase() + ". Look for " + target.toUpperCase(), {now:true});
+        say("That one is " + letterName(hit.l) + ". Look for " + letterName(target) + "!", {now:true});
       }
     });
     const onResize = () => { size(); fill(); };
@@ -1029,7 +1079,7 @@ ACTIVITIES.bins = {
           mini.style.cssText = "width:44px;height:44px;font-size:26px;box-shadow:0 3px 0 var(--ink)";
           mini.textContent = isUpper ? l.toUpperCase() : l;
           bin.querySelector(".caught").appendChild(mini);
-          say(l.toUpperCase() + ", " + (isUpper ? "big" : "little"), {now:true});
+          say(letterName(l) + ", that's a " + (isUpper ? "big one!" : "little one!"), {now:true});
           left--;
           if(left === 0){ round++; record("bins", Math.round(round*5/4)); setDots(round,4); confetti(); setTimeout(next, 1200); }
         } else {
@@ -1037,7 +1087,7 @@ ACTIVITIES.bins = {
           say(isUpper ? "That is a BIG letter." : "That is a little letter.", {now:true});
         }
       },
-      onPick(tile){ say(tile.dataset.letter.toUpperCase(), {now:true}); }
+      onPick(tile){ say(letterName(tile.dataset.letter), {now:true}); }
     });
     onCleanup(() => drag.reset());
 
@@ -1114,8 +1164,7 @@ ACTIVITIES.doors = {
         opened++; addStar(); markSeen(d.l);
         record("doors", Math.round(opened*5/6));
         setDots(Math.min(opened,5), 5);
-        say(d.word + "!", {now:true});
-        sayFull(d.l);
+        sayFull(d.l, {now:true, lead: d.word + "!"});
         if(opened === 6){
           setTimeout(() => { cheer("Every door open!", "Six double-clicks.", 2800); setTimeout(goHome, 2800); }, 1400);
         }
@@ -1163,7 +1212,7 @@ ACTIVITIES.scroll = {
             setTimeout(next, 1600);
           } else {
             flashWrong(t);
-            say("That is " + l.toUpperCase() + ". Keep scrolling for " + target.toUpperCase(), {now:true});
+            say("That one is " + letterName(l) + ". Keep scrolling for " + letterName(target) + "!", {now:true});
           }
         });
         box.appendChild(t);
@@ -1283,8 +1332,7 @@ ACTIVITIES.trace = {
         record("trace", Math.round(idx*5/4));
         setDots(idx, 4);
         confetti();
-        say(pick(PRAISE), {now:true});
-        sayFull(letter);
+        sayFull(letter, {now:true, lead: pick(PRAISE)});
         setTimeout(loadLetter, 2600);
       }
     }
@@ -1316,7 +1364,10 @@ document.getElementById("settingsBtn").addEventListener("click", () => {
     '<h2>Settings</h2><p class="sub">Set it up the way her class does it.</p>' +
     '<div class="row"><span class="lab">Letters look like</span>' + seg("caseMode", [["upper","A B C"],["lower","a b c"],["both","A a B b"]], S.caseMode) + '</div>' +
     '<div class="row"><span class="lab">Voice</span>' + seg("speech", [[ "on","On"],["off","Off"]], S.speech ? "on" : "off") + '</div>' +
-    '<div class="row"><span class="lab">Voice speed</span>' + seg("rate", [["0.68","Slow"],["0.82","Just right"],["0.98","Quick"]], String(S.rate)) + '</div>' +
+    '<div class="row"><span class="lab">Which voice</span><select class="pill" id="voiceSel"></select>' +
+      '<button class="pill" id="tryVoice">Hear it</button></div>' +
+    '<div id="voiceNote"></div>' +
+    '<div class="row"><span class="lab">Voice speed</span>' + seg("rate", [["0.78","Slow"],["0.92","Just right"],["1.05","Quick"]], String(S.rate)) + '</div>' +
     '<div class="row"><span class="lab">Start over</span><button class="pill" id="resetBtn">Clear stars</button></div>' +
     '<div class="row" style="justify-content:flex-end"><button class="pill" id="doneBtn">Done</button></div>',
     host => {
@@ -1329,6 +1380,36 @@ document.getElementById("settingsBtn").addEventListener("click", () => {
         host.querySelectorAll('[data-seg="' + k + '"]').forEach(o => o.setAttribute("aria-pressed", o === b));
         if(k === "rate" || k === "speech") say("Hello! This is my voice.", {now:true});
       }));
+      /* Voice quality is decided almost entirely by which voice is
+         installed, and that varies by machine, so let them hear and choose. */
+      const sel = host.querySelector("#voiceSel");
+      const note = host.querySelector("#voiceNote");
+      function populate(){
+        const vs = rankedVoices();
+        if(!vs.length){
+          sel.innerHTML = '<option>No voices installed</option>';
+          sel.disabled = true;
+          note.innerHTML = '<div class="notice">This browser has no speech voices installed, so the app will be silent. ' +
+            'On a Chromebook they are built in. On Arch Linux, the most human-sounding ones are ' +
+            '<code>sudo pacman -S speech-dispatcher rhvoice rhvoice-language-english rhvoice-voice-slt</code> ' +
+            '— then restart the browser and pick one here.</div>';
+          return;
+        }
+        sel.disabled = false;
+        note.innerHTML = "";
+        sel.innerHTML = vs.map(v =>
+          '<option value="' + v.name.replace(/"/g,"&quot;") + '">' +
+          v.name.replace(/</g,"&lt;") + ' (' + v.lang + ')</option>').join("");
+        sel.value = (voice && voice.name) || vs[0].name;
+      }
+      populate();
+      if(!rankedVoices().length) setTimeout(populate, 700); /* voices often arrive late */
+      sel.addEventListener("change", () => {
+        S.voiceName = sel.value; save(); chooseVoice();
+        say("Bee says buh, like ball!", {now:true});
+      });
+      host.querySelector("#tryVoice").addEventListener("click", () =>
+        say("Hello! Bee says buh, like ball. Can you find the letter Ess?", {now:true}));
       host.querySelector("#doneBtn").addEventListener("click", () => { closeSheet(); if(!current) renderHome(); });
       host.querySelector("#resetBtn").addEventListener("click", e => {
         if(e.target.dataset.sure){
@@ -1350,6 +1431,7 @@ document.getElementById("grownupsBtn").addEventListener("click", () => {
       '<li><b>Trackpad order.</b> Bubble Pop first (just moving the pointer), then Knock Knock, then the two dragging games. Trace a Letter is the hardest &mdash; it needs a click held down the whole way.</li>' +
       '<li><b>Every drag also works as two taps.</b> Tap the letter, then tap where it goes. Let her use that until the drag itself clicks.</li>' +
       '<li><b>Sounds, not names.</b> The voice says the <i>sound</i> a letter makes (&ldquo;mmm&rdquo;, not &ldquo;em&rdquo;) because that is what blends into words. Stretchy letters are held; b, d, p and t get the shortest possible &ldquo;uh&rdquo;.</li>' +
+      '<li><b>If the voice sounds robotic,</b> open Settings and try the other voices in the list — the ones marked <i>Natural</i>, <i>Neural</i> or <i>Online</i> are the human-sounding ones. On a Chromebook, more can be added under Settings &rarr; Accessibility &rarr; Text-to-speech.</li>' +
       '<li><b>Case.</b> Kindergarten usually starts in capitals. Switch to <i>A a B b</i> in Settings once she is matching both.</li>' +
       '<li><b>No losing.</b> A wrong answer never takes a star or ends a round &mdash; it just asks again.</li>' +
       '<li><b>Progress lives in this browser.</b> Stars and letters are stored on this device only, so her Chromebook and your machine keep separate counts.</li>' +
@@ -1367,7 +1449,7 @@ addEventListener("pointerdown", () => {
   if(warmed) return;
   warmed = true;
   if("speechSynthesis" in window && !voiceReady) pickVoice();
-  say("Hi! Let's play with letters.", {now:true});
+  say(pick(["Hi! Let's play with letters.","Hello! Ready to play with letters?","Hi there! Let's find some letters."]), {now:true});
 }, {once:false});
 
 renderHome();

@@ -15,6 +15,13 @@ Open `index.html` in any browser, or use the published link.
   double-story `a` actively confuses a new reader.
 - **Sounds, not just names.** The voice gives the phoneme. Continuants (f, l, m,
   n, r, s, v, z) are held; stops get the shortest possible schwa.
+- **Phrases are spoken as whole sentences.** A synthesiser carries its
+  intonation across an utterance, so "B says buh, like ball!" is sent as one
+  line. Chopping it into fragments restarts the prosody flat on each piece with
+  a gap between, which is what makes synthetic speech sound like a robot. Voices
+  are ranked (Natural / Neural / Online / Enhanced win; eSpeak, Festival, Pico
+  and the legacy SAPI "Desktop" voices lose) and Settings has a picker with a
+  preview, because what is installed differs on every machine.
 - **Every drag also works as two taps.** Tap the letter, then tap where it goes,
   so a child who cannot yet hold a drag is never locked out of the phonics.
 - **No losing.** A wrong answer never costs a star or ends a round.
@@ -34,3 +41,14 @@ Trace a Letter (press-and-hold drag along correct letter formation strokes).
 Single file, no build step, no dependencies beyond Google Fonts. Progress is kept
 in `localStorage`, so each device keeps its own stars. Settings cover letter case
 (capitals / lower case / mixed), voice on-off and voice speed.
+
+## Getting a human-sounding voice
+
+The browser supplies the voice, not the app. A Chromebook has good ones built
+in (more under Settings -> Accessibility -> Text-to-speech). A bare Arch install
+has *none*, so the app is silent until speech-dispatcher is present:
+
+    sudo pacman -S speech-dispatcher rhvoice rhvoice-language-english rhvoice-voice-slt
+
+Then restart the browser and choose the voice in Settings. RHVoice sounds far
+more human than espeak-ng, which is the one that sounds like a robot.
