@@ -1,0 +1,1374 @@
+<title>Alphabet Clubhouse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Baloo+2:wght@500;600;800&display=swap">
+<style>
+/* ---------------------------------------------------------------
+   Alphabet Clubhouse
+   Andika is used for every letterform the child has to read: it is
+   SIL's literacy typeface, so the 'a' and 'g' are single-story and
+   the l / I / 1 are distinct -- the same manuscript print she is
+   taught to form in kindergarten. Baloo 2 is chrome only.
+   Single, committed visual world (construction paper on a classroom
+   chalkboard), so every color is painted explicitly.
+----------------------------------------------------------------*/
+:root{
+  --manila:#FAF3E3;
+  --manila-deep:#F0E5CC;
+  --board:#2F5D50;
+  --board-dark:#254A40;
+  --ink:#2A2622;
+  --ink-soft:#6B6157;
+  --poppy:#E4572E;
+  --sun:#F4B942;
+  --sky:#3E92CC;
+  --grape:#8A5FBF;
+  --grass:#58A55C;
+  --star:#F6C445;
+  --paper-shadow:rgba(42,38,34,.20);
+  --r-tile:18px;
+  --font-letter:"Andika","Trebuchet MS",Verdana,sans-serif;
+  --font-ui:"Baloo 2","Andika",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  background:var(--manila);
+  background-image:radial-gradient(circle at 18% 12%,rgba(244,185,66,.14),transparent 42%),
+                   radial-gradient(circle at 84% 78%,rgba(62,146,204,.12),transparent 46%);
+  color:var(--ink);
+  font-family:var(--font-ui);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:none}
+:focus-visible{outline:4px solid var(--sky);outline-offset:3px;border-radius:8px}
+
+/* ---------- app shell ---------- */
+.app{max-width:1100px;margin:0 auto;padding:18px 20px 48px;display:flex;flex-direction:column;gap:22px}
+.topbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand h1{
+  font-size:clamp(26px,4.2vw,40px);font-weight:800;margin:0;letter-spacing:-.01em;
+  color:var(--board);text-wrap:balance;
+}
+.brand .crayon{
+  display:inline-block;width:16px;height:16px;border-radius:50%;background:var(--poppy);
+  box-shadow:22px 0 0 var(--sun),44px 0 0 var(--sky);margin-right:52px;
+}
+.stars{
+  display:flex;align-items:center;gap:8px;background:#fff;border:3px solid var(--ink);
+  border-radius:999px;padding:6px 16px 6px 12px;font-weight:800;font-size:20px;
+  box-shadow:0 3px 0 var(--ink);
+}
+.stars svg{width:24px;height:24px;flex:none}
+.iconbtn{
+  width:52px;height:52px;border-radius:16px;background:#fff;border:3px solid var(--ink);
+  box-shadow:0 3px 0 var(--ink);display:grid;place-items:center;font-size:24px;
+  transition:transform .12s ease,box-shadow .12s ease;
+}
+.iconbtn:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+
+/* ---------- home ---------- */
+.shelf{display:flex;flex-direction:column;gap:12px}
+.shelf-head{display:flex;align-items:center;gap:12px}
+.shelf-head h2{
+  font-size:15px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+  margin:0;color:var(--ink-soft);
+}
+.shelf-head .rule{flex:1;height:3px;border-radius:2px;background:var(--manila-deep)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
+.card{
+  position:relative;text-align:left;padding:18px 18px 16px;border-radius:22px;
+  border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink);background:#fff;
+  display:flex;flex-direction:column;gap:6px;min-height:150px;
+  transition:transform .14s ease,box-shadow .14s ease;
+}
+.card:hover,.card:focus-visible{transform:translateY(-3px);box-shadow:0 8px 0 var(--ink)}
+.card:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.card .emoji{font-size:44px;line-height:1}
+.card .name{font-size:24px;font-weight:800;line-height:1.1}
+.card .what{font-size:14px;font-weight:500;color:var(--ink-soft);line-height:1.3}
+.card .skill{
+  position:absolute;top:-11px;right:14px;font-size:11px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;padding:3px 10px;border-radius:999px;border:3px solid var(--ink);
+  background:var(--sun);color:var(--ink);
+}
+.card.c-sky{background:#EAF4FB}.card.c-poppy{background:#FDEDE7}
+.card.c-grape{background:#F2EBFA}.card.c-grass{background:#EAF5EB}
+.card.c-sun{background:#FDF3DF}
+.card .dots{display:flex;gap:4px;margin-top:auto}
+.card .dots i{width:10px;height:10px;border-radius:50%;background:var(--manila-deep);border:2px solid rgba(42,38,34,.25)}
+.card .dots i.on{background:var(--star);border-color:var(--ink)}
+
+/* ---------- stage (inside an activity) ---------- */
+.stage{
+  background:var(--board);
+  background-image:
+    repeating-linear-gradient(115deg,rgba(255,255,255,.028) 0 2px,transparent 2px 7px),
+    radial-gradient(circle at 30% 20%,rgba(255,255,255,.06),transparent 55%);
+  border:4px solid var(--board-dark);border-radius:28px;
+  box-shadow:inset 0 0 40px rgba(0,0,0,.28),0 6px 0 rgba(42,38,34,.35);
+  padding:20px;display:flex;flex-direction:column;gap:18px;min-height:62vh;
+}
+.prompt{display:flex;align-items:center;gap:14px}
+.prompt .say{
+  flex:none;width:60px;height:60px;border-radius:50%;background:var(--sun);
+  border:4px solid var(--ink);box-shadow:0 4px 0 var(--ink);display:grid;place-items:center;
+  font-size:28px;
+}
+.prompt .say:active{transform:translateY(4px);box-shadow:0 0 0 var(--ink)}
+.prompt p{
+  margin:0;font-size:clamp(20px,2.9vw,30px);font-weight:600;color:#FFF7E6;
+  line-height:1.2;text-wrap:balance;
+}
+.prompt p b{color:var(--sun);font-family:var(--font-letter);font-weight:700}
+.playarea{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+
+/* ---------- letter tiles ---------- */
+.tilewrap{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-content:center}
+.tile{
+  font-family:var(--font-letter);font-weight:700;line-height:1;
+  width:104px;height:104px;border-radius:var(--r-tile);display:grid;place-items:center;
+  font-size:58px;background:#fff;color:var(--ink);border:4px solid var(--ink);
+  box-shadow:0 5px 0 var(--ink);user-select:none;-webkit-user-select:none;touch-action:none;
+  transition:transform .12s ease,box-shadow .12s ease,background-color .2s ease;
+}
+.tile:hover,.tile:focus-visible{transform:translateY(-4px);box-shadow:0 9px 0 var(--ink)}
+.tile:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.tile.sm{width:76px;height:76px;font-size:42px;border-width:3px;box-shadow:0 4px 0 var(--ink)}
+.tile.t-poppy{background:var(--poppy);color:#fff}
+.tile.t-sky{background:var(--sky);color:#fff}
+.tile.t-grape{background:var(--grape);color:#fff}
+.tile.t-grass{background:var(--grass);color:#fff}
+.tile.t-sun{background:var(--sun)}
+.tile.right{animation:pop .45s ease}
+.tile.wrong{animation:wobble .4s ease}
+.tile.picked{outline:6px dashed var(--sun);outline-offset:4px}
+.tile.ghost{opacity:.28}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.22) rotate(-4deg)}100%{transform:scale(1)}}
+@keyframes wobble{0%,100%{transform:translateX(0)}25%{transform:translateX(-9px)}75%{transform:translateX(9px)}}
+
+/* ---------- shared bits ---------- */
+.bigword{
+  font-family:var(--font-letter);font-weight:700;color:#FFF7E6;
+  font-size:clamp(36px,6vw,64px);letter-spacing:.06em;
+}
+.pic{font-size:clamp(78px,13vw,130px);line-height:1;filter:drop-shadow(0 8px 0 rgba(0,0,0,.22))}
+.hint{color:#CFE3DC;font-size:16px;font-weight:600}
+.pill{
+  background:#fff;border:3px solid var(--ink);border-radius:999px;padding:8px 18px;
+  font-weight:800;font-size:18px;box-shadow:0 4px 0 var(--ink);
+}
+.pill:active{transform:translateY(4px);box-shadow:0 0 0 var(--ink)}
+.progress{display:flex;gap:7px;justify-content:center}
+.progress i{width:15px;height:15px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.45)}
+.progress i.on{background:var(--star);border-color:#fff}
+
+/* ---------- celebration ---------- */
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:60}
+.cheer{
+  position:fixed;inset:0;display:grid;place-items:center;z-index:61;pointer-events:none;
+}
+.cheer .inner{
+  background:#fff;border:5px solid var(--ink);border-radius:32px;box-shadow:0 10px 0 var(--ink);
+  padding:28px 44px;text-align:center;animation:pop .5s ease;
+}
+.cheer h3{margin:0;font-size:44px;font-weight:800;color:var(--board)}
+.cheer p{margin:6px 0 0;font-size:20px;font-weight:600;color:var(--ink-soft)}
+
+/* ---------- sheets (settings / grown-ups) ---------- */
+.scrim{position:fixed;inset:0;background:rgba(42,38,34,.55);z-index:70;display:grid;place-items:center;padding:20px}
+.sheet{
+  background:var(--manila);border:5px solid var(--ink);border-radius:28px;box-shadow:0 10px 0 var(--ink);
+  max-width:620px;width:100%;max-height:86vh;overflow-y:auto;padding:26px;
+}
+.sheet h2{margin:0 0 4px;font-size:30px;font-weight:800;color:var(--board)}
+.sheet .sub{margin:0 0 18px;color:var(--ink-soft);font-weight:600}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:3px dotted var(--manila-deep);flex-wrap:wrap}
+.row:last-of-type{border-bottom:none}
+.row .lab{font-weight:800;font-size:18px;margin-right:auto}
+.seg{display:flex;border:3px solid var(--ink);border-radius:999px;overflow:hidden;background:#fff}
+.seg button{padding:8px 16px;font-weight:800;font-size:16px;font-family:var(--font-letter)}
+.seg button[aria-pressed="true"]{background:var(--board);color:#FFF7E6}
+.grid26{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:8px;margin-top:6px}
+.grid26 span{
+  font-family:var(--font-letter);font-weight:700;font-size:24px;text-align:center;padding:6px 0;
+  border-radius:12px;background:#fff;border:3px solid var(--manila-deep);color:#C8BCA8;
+}
+.grid26 span.done{background:var(--grass);border-color:var(--ink);color:#fff}
+.tips{font-size:16px;line-height:1.55;color:var(--ink)}
+.tips li{margin-bottom:9px}
+.footnote{
+  text-align:center;color:var(--ink-soft);font-weight:600;font-size:14px;
+  display:flex;gap:16px;justify-content:center;flex-wrap:wrap;
+}
+.footnote button{text-decoration:underline;font-weight:800}
+.hidden{display:none!important}
+
+/* ---------- games ---------- */
+#bubbleCanvas{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.bubblebox{position:relative;width:100%;flex:1;min-height:340px}
+.bins{display:flex;gap:22px;justify-content:center;width:100%;flex-wrap:wrap}
+.bin{
+  flex:1;min-width:190px;max-width:300px;min-height:170px;border-radius:24px;border:5px dashed rgba(255,255,255,.55);
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;padding:12px;
+  transition:background-color .15s ease,border-color .15s ease,transform .15s ease;
+}
+.bin.over{background:rgba(246,196,69,.25);border-color:var(--sun);transform:scale(1.03)}
+.bin h4{margin:0;font-size:20px;font-weight:800;color:#FFF7E6;font-family:var(--font-letter)}
+.bin .caught{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.dragging{position:fixed;z-index:80;pointer-events:none;transform:translate(-50%,-50%) scale(1.1) rotate(-3deg)}
+.door{
+  width:132px;height:150px;border-radius:14px 14px 8px 8px;background:var(--poppy);
+  border:5px solid var(--ink);box-shadow:0 6px 0 var(--ink);position:relative;display:grid;place-items:center;
+  font-size:54px;transition:transform .2s ease,background-color .25s ease;
+}
+.door::after{content:"";position:absolute;right:14px;top:50%;width:13px;height:13px;border-radius:50%;background:var(--sun);border:3px solid var(--ink)}
+.door.open{background:#FFF7E6;transform:rotateY(0deg)}
+.door.open::after{display:none}
+.door.half{background:#EE8A63}
+.slots{display:flex;gap:12px}
+.slot{
+  width:104px;height:104px;border-radius:var(--r-tile);border:5px dashed rgba(255,255,255,.6);
+  display:grid;place-items:center;font-family:var(--font-letter);font-size:58px;font-weight:700;color:#FFF7E6;
+}
+.slot.over{background:rgba(246,196,69,.25);border-color:var(--sun)}
+.slot.filled{border-style:solid;background:#fff;color:var(--ink);border-color:var(--ink);box-shadow:0 5px 0 rgba(0,0,0,.3)}
+.scrollbox{
+  width:min(340px,90%);height:330px;overflow-y:auto;background:#FFF7E6;border:5px solid var(--ink);
+  border-radius:22px;padding:10px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth;
+}
+.tracebox{display:flex;flex-direction:column;align-items:center;gap:10px}
+.tracesvg{background:#FFF7E6;border:5px solid var(--ink);border-radius:22px;touch-action:none;box-shadow:0 6px 0 rgba(0,0,0,.3)}
+.tracesvg .guide{stroke:#E2D6BC;stroke-width:44;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.tracesvg .dash{stroke:#B9A98A;stroke-width:4;stroke-linecap:round;fill:none;stroke-dasharray:2 16}
+.tracesvg .done-stroke{stroke:var(--grass);stroke-width:26;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.tracesvg .ink{stroke:var(--poppy);stroke-width:26;stroke-linecap:round;stroke-linejoin:round;fill:none}
+.tracesvg .startdot{fill:var(--grass);stroke:var(--ink);stroke-width:4}
+.tracesvg .endflag{fill:var(--sky);stroke:var(--ink);stroke-width:4}
+
+@media (max-width:640px){
+  .app{padding:14px 14px 34px}
+  .tile{width:84px;height:84px;font-size:46px}
+  .slot{width:84px;height:84px;font-size:46px}
+  .stage{padding:14px;border-radius:22px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+</style>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="crayon" aria-hidden="true"></span>
+      <h1 id="pageTitle">Alphabet Clubhouse</h1>
+    </div>
+    <button class="iconbtn hidden" id="homeBtn" title="Back to the clubhouse" aria-label="Back to the clubhouse">🏠</button>
+    <div class="stars" title="Stars earned">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z" fill="#F6C445" stroke="#2A2622" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <span id="starCount">0</span>
+    </div>
+    <button class="iconbtn" id="settingsBtn" title="Settings" aria-label="Settings">⚙️</button>
+  </div>
+
+  <!-- HOME -->
+  <div id="home">
+    <div class="shelf" style="margin-bottom:26px">
+      <div class="shelf-head"><h2>Letters &amp; Sounds</h2><span class="rule"></span></div>
+      <div class="cards" id="cardsPhonics"></div>
+    </div>
+    <div class="shelf">
+      <div class="shelf-head"><h2>Trackpad Practice</h2><span class="rule"></span></div>
+      <div class="cards" id="cardsTrackpad"></div>
+    </div>
+    <p class="footnote" style="margin-top:30px">
+      <button id="grownupsBtn">For grown-ups</button>
+      <span>Headphones or speakers on — every question is read out loud.</span>
+    </p>
+  </div>
+
+  <!-- ACTIVITY -->
+  <div id="play" class="hidden">
+    <div class="stage">
+      <div class="prompt">
+        <button class="say" id="sayBtn" title="Say it again" aria-label="Say it again">🔊</button>
+        <p id="promptText">Ready?</p>
+      </div>
+      <div class="playarea" id="playArea"></div>
+      <div class="progress" id="progressDots"></div>
+    </div>
+  </div>
+</div>
+
+<div id="sheetHost"></div>
+<canvas class="confetti hidden" id="confetti"></canvas>
+<div class="cheer hidden" id="cheer"><div class="inner"><h3 id="cheerTitle">Great job!</h3><p id="cheerSub"></p></div></div>
+
+<script>
+/* =====================================================================
+   DATA
+   `sound` strings are spelled for a speech synthesiser, not for a
+   phonetician. Continuants (f, l, m, n, r, s, v, z) are stretched so
+   the voice holds the pure sound; stops get the shortest possible
+   schwa, which is how the sound is modelled in class anyway.
+   ===================================================================== */
+const LETTERS = [
+  {l:"a", sound:"aa",   word:"apple",     emoji:"🍎"},
+  {l:"b", sound:"buh",  word:"ball",      emoji:"⚽"},
+  {l:"c", sound:"kuh",  word:"cat",       emoji:"🐱"},
+  {l:"d", sound:"duh",  word:"dog",       emoji:"🐶"},
+  {l:"e", sound:"eh",   word:"egg",       emoji:"🥚"},
+  {l:"f", sound:"ffff", word:"fish",      emoji:"🐟"},
+  {l:"g", sound:"guh",  word:"goat",      emoji:"🐐"},
+  {l:"h", sound:"huh",  word:"hat",       emoji:"🎩"},
+  {l:"i", sound:"ih",   word:"insect",    emoji:"🦗"},
+  {l:"j", sound:"juh",  word:"jet",       emoji:"✈️"},
+  {l:"k", sound:"kuh",  word:"key",       emoji:"🔑"},
+  {l:"l", sound:"llll", word:"leaf",      emoji:"🍃"},
+  {l:"m", sound:"mmmm", word:"moon",      emoji:"🌙"},
+  {l:"n", sound:"nnnn", word:"nest",      emoji:"🪺"},
+  {l:"o", sound:"ah",   word:"octopus",   emoji:"🐙"},
+  {l:"p", sound:"puh",  word:"pig",       emoji:"🐷"},
+  {l:"q", sound:"kwuh", word:"queen",     emoji:"👑"},
+  {l:"r", sound:"rrrr", word:"rain",      emoji:"🌧️"},
+  {l:"s", sound:"ssss", word:"sun",       emoji:"☀️"},
+  {l:"t", sound:"tuh",  word:"tree",      emoji:"🌳"},
+  {l:"u", sound:"uh",   word:"umbrella",  emoji:"☂️"},
+  {l:"v", sound:"vvvv", word:"van",       emoji:"🚐"},
+  {l:"w", sound:"wuh",  word:"web",       emoji:"🕸️"},
+  {l:"x", sound:"ks",   word:"fox",       emoji:"🦊", final:true},
+  {l:"y", sound:"yuh",  word:"yarn",      emoji:"🧶"},
+  {l:"z", sound:"zzzz", word:"zebra",     emoji:"🦓"}
+];
+const BY = Object.fromEntries(LETTERS.map(o => [o.l, o]));
+const ALPHA = LETTERS.map(o => o.l);
+/* Words whose beginning sound is clean enough to quiz on. */
+const START_WORDS = LETTERS.filter(o => !o.final);
+/* CVC words for blending, with a picture the child can name unaided. */
+const CVC = [
+  {w:"cat",emoji:"🐱"},{w:"dog",emoji:"🐶"},{w:"sun",emoji:"☀️"},{w:"pig",emoji:"🐷"},
+  {w:"bus",emoji:"🚌"},{w:"hat",emoji:"🎩"},{w:"net",emoji:"🥅"},{w:"cup",emoji:"☕"},
+  {w:"bed",emoji:"🛏️"},{w:"map",emoji:"🗺️"},{w:"fox",emoji:"🦊"},{w:"jam",emoji:"🍓"},
+  {w:"web",emoji:"🕸️"},{w:"pot",emoji:"🍲"},{w:"bug",emoji:"🐛"},{w:"log",emoji:"🪵"}
+];
+const TILECOLORS = ["t-poppy","t-sky","t-grape","t-grass","t-sun"];
+
+/* =====================================================================
+   STATE
+   ===================================================================== */
+const KEY = "alphabet-clubhouse-v1";
+const defaults = {stars:0, seen:{}, best:{}, caseMode:"upper", speech:true, rate:0.82};
+let S = Object.assign({}, defaults);
+try{ const raw = localStorage.getItem(KEY); if(raw) S = Object.assign({}, defaults, JSON.parse(raw)); }catch(e){}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function addStar(n){ S.stars += (n||1); document.getElementById("starCount").textContent = S.stars; save(); }
+function markSeen(l){ S.seen[l] = (S.seen[l]||0)+1; save(); }
+/* How the child should SEE a letter right now. */
+function show(l){
+  if(S.caseMode === "upper") return l.toUpperCase();
+  if(S.caseMode === "lower") return l;
+  return Math.random() < 0.5 ? l.toUpperCase() : l;
+}
+
+/* =====================================================================
+   SPEECH  — nothing on screen requires reading, so this does the work.
+   ===================================================================== */
+let voice = null, voiceReady = false;
+function pickVoice(){
+  const vs = speechSynthesis.getVoices();
+  if(!vs.length) return;
+  const en = vs.filter(v => /^en(-|_)?/i.test(v.lang));
+  const pool = en.length ? en : vs;
+  const liked = ["Google US English","Samantha","Microsoft Aria","Microsoft Jenny","Karen","Moira","Google UK English Female"];
+  voice = pool.find(v => liked.some(n => v.name.includes(n)))
+       || pool.find(v => /female/i.test(v.name))
+       || pool.find(v => /en-US/i.test(v.lang))
+       || pool[0];
+  voiceReady = true;
+}
+if("speechSynthesis" in window){
+  pickVoice();
+  speechSynthesis.onvoiceschanged = pickVoice;
+}
+let speakQueue = Promise.resolve();
+function speakNow(text, opts){
+  return new Promise(res => {
+    if(!S.speech || !("speechSynthesis" in window) || !text) return res();
+    const u = new SpeechSynthesisUtterance(text);
+    if(voice) u.voice = voice;
+    u.lang = (voice && voice.lang) || "en-US";
+    u.rate = (opts && opts.rate) || S.rate;
+    u.pitch = (opts && opts.pitch) || 1.12;
+    u.onend = res; u.onerror = res;
+    speechSynthesis.speak(u);
+    setTimeout(res, 400 + text.length * 130); /* belt-and-braces: never hang the queue */
+  });
+}
+/* say("...") queues; say("...", {now:true}) interrupts (a child taps fast). */
+function say(text, opts){
+  opts = opts || {};
+  if(opts.now && "speechSynthesis" in window){ speechSynthesis.cancel(); speakQueue = Promise.resolve(); }
+  speakQueue = speakQueue.then(() => speakNow(text, opts));
+  return speakQueue;
+}
+function pause(ms){ speakQueue = speakQueue.then(() => new Promise(r => setTimeout(r, ms))); return speakQueue; }
+function sayLetterName(l){ return say(l.toUpperCase() === "A" ? "Ay" : l.toUpperCase()); }
+/* "B says buh, like ball." */
+function sayFull(l, interrupt){
+  const d = BY[l];
+  say(l.toUpperCase(), {now: !!interrupt});
+  say("says");
+  say(d.sound, {rate: Math.max(0.6, S.rate - 0.15)});
+  say("like " + d.word + "!");
+}
+const PRAISE = ["Yes!","Great job!","You got it!","Nice work!","Perfect!","Well done!","That's it!"];
+const AGAIN  = ["Nearly! Try again.","Not quite — have another go.","Try one more time.","Close! Try again."];
+const pick = a => a[Math.floor(Math.random() * a.length)];
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function sample(arr, n, exclude){
+  const pool = shuffle(arr.filter(x => !exclude || !exclude.includes(x)));
+  return pool.slice(0, n);
+}
+
+/* =====================================================================
+   CELEBRATION
+   ===================================================================== */
+const conf = document.getElementById("confetti");
+const cx = conf.getContext("2d");
+let confBits = [], confRAF = null;
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function confetti(){
+  if(reduceMotion) return;
+  conf.classList.remove("hidden");
+  conf.width = innerWidth; conf.height = innerHeight;
+  const cols = ["#E4572E","#F4B942","#3E92CC","#8A5FBF","#58A55C","#F6C445"];
+  for(let i=0;i<90;i++) confBits.push({
+    x: innerWidth/2 + (Math.random()-0.5)*260, y: innerHeight*0.42,
+    vx:(Math.random()-0.5)*13, vy:-6-Math.random()*11,
+    s:7+Math.random()*9, c:cols[i%cols.length], r:Math.random()*6, vr:(Math.random()-0.5)*0.4
+  });
+  if(!confRAF) confRAF = requestAnimationFrame(stepConf);
+}
+function stepConf(){
+  cx.clearRect(0,0,conf.width,conf.height);
+  confBits = confBits.filter(p => p.y < conf.height + 40);
+  confBits.forEach(p => {
+    p.vy += 0.42; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+    cx.save(); cx.translate(p.x,p.y); cx.rotate(p.r);
+    cx.fillStyle = p.c; cx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.62); cx.restore();
+  });
+  if(confBits.length) confRAF = requestAnimationFrame(stepConf);
+  else { confRAF = null; conf.classList.add("hidden"); cx.clearRect(0,0,conf.width,conf.height); }
+}
+function cheer(title, sub, ms){
+  const el = document.getElementById("cheer");
+  document.getElementById("cheerTitle").textContent = title;
+  document.getElementById("cheerSub").textContent = sub || "";
+  el.classList.remove("hidden");
+  confetti();
+  setTimeout(() => el.classList.add("hidden"), ms || 2200);
+}
+
+/* =====================================================================
+   ROUTER + ACTIVITY HOST
+   ===================================================================== */
+const ACTIVITIES = {};
+let current = null, cleanups = [];
+const playArea   = document.getElementById("playArea");
+const promptText = document.getElementById("promptText");
+const dotsEl     = document.getElementById("progressDots");
+let lastPrompt = "";
+
+function setPrompt(html, spoken){
+  promptText.innerHTML = html;
+  lastPrompt = spoken !== undefined ? spoken : promptText.textContent;
+  if(lastPrompt) say(lastPrompt, {now:true});
+}
+function setDots(done, total){
+  dotsEl.innerHTML = "";
+  for(let i=0;i<total;i++){ const i2 = document.createElement("i"); if(i<done) i2.className = "on"; dotsEl.appendChild(i2); }
+}
+function onCleanup(fn){ cleanups.push(fn); }
+function openActivity(id){
+  const a = ACTIVITIES[id];
+  if(!a) return;
+  current = id;
+  document.getElementById("home").classList.add("hidden");
+  document.getElementById("play").classList.remove("hidden");
+  document.getElementById("homeBtn").classList.remove("hidden");
+  document.getElementById("pageTitle").textContent = a.name;
+  playArea.innerHTML = ""; dotsEl.innerHTML = "";
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+  speakQueue = Promise.resolve();
+  a.start();
+}
+function goHome(){
+  cleanups.forEach(fn => { try{ fn(); }catch(e){} });
+  cleanups = []; current = null;
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+  speakQueue = Promise.resolve();
+  playArea.innerHTML = "";
+  document.getElementById("play").classList.add("hidden");
+  document.getElementById("home").classList.remove("hidden");
+  document.getElementById("homeBtn").classList.add("hidden");
+  document.getElementById("pageTitle").textContent = "Alphabet Clubhouse";
+  renderHome();
+}
+document.getElementById("homeBtn").addEventListener("click", goHome);
+document.getElementById("sayBtn").addEventListener("click", () => { if(lastPrompt) say(lastPrompt, {now:true}); });
+
+/* =====================================================================
+   HOME
+   ===================================================================== */
+function renderHome(){
+  document.getElementById("starCount").textContent = S.stars;
+  const phon = document.getElementById("cardsPhonics");
+  const trak = document.getElementById("cardsTrackpad");
+  phon.innerHTML = ""; trak.innerHTML = "";
+  Object.keys(ACTIVITIES).forEach(id => {
+    const a = ACTIVITIES[id];
+    const b = document.createElement("button");
+    b.className = "card " + a.color;
+    const best = S.best[id] || 0;
+    b.innerHTML =
+      '<span class="skill">' + a.skill + '</span>' +
+      '<span class="emoji">' + a.emoji + '</span>' +
+      '<span class="name">' + a.name + '</span>' +
+      '<span class="what">' + a.what + '</span>' +
+      '<span class="dots">' + [0,1,2,3,4].map(i => '<i class="'+(i<best?"on":"")+'"></i>').join("") + '</span>';
+    b.addEventListener("click", () => openActivity(id));
+    b.addEventListener("pointerenter", () => say(a.name, {now:true}));
+    (a.group === "trackpad" ? trak : phon).appendChild(b);
+  });
+}
+</script>
+
+<script>
+/* =====================================================================
+   DRAG ENGINE
+   Pointer Events, so one code path covers trackpad, mouse and the
+   touchscreen. Every drag target also accepts tap-the-tile then
+   tap-the-target, so a child who cannot hold a drag yet is never
+   locked out of the phonics underneath.
+   ===================================================================== */
+function dragSystem(opts){
+  let picked = null, ghost = null, dragging = false, startX = 0, startY = 0, origin = null;
+  const THRESHOLD = 7;
+
+  function targetUnder(x, y){
+    const el = document.elementFromPoint(x, y);
+    if(!el) return null;
+    return el.closest("[data-drop]");
+  }
+  function clearHover(){ document.querySelectorAll(".bin.over,.slot.over").forEach(e => e.classList.remove("over")); }
+  function unpick(){
+    if(picked) picked.classList.remove("picked");
+    picked = null;
+  }
+  function endDrag(x, y){
+    if(ghost){ ghost.remove(); ghost = null; }
+    if(origin) origin.classList.remove("ghost");
+    clearHover();
+    const t = targetUnder(x, y);
+    if(t && origin) opts.onDrop(origin, t);
+    origin = null; dragging = false;
+  }
+  function onTileDown(e){
+    if(e.button !== undefined && e.button !== 0) return;
+    const tile = e.currentTarget;
+    startX = e.clientX; startY = e.clientY; origin = tile; dragging = false;
+    try{ tile.setPointerCapture(e.pointerId); }catch(err){}
+  }
+  function onTileMove(e){
+    if(!origin) return;
+    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if(!dragging && Math.hypot(dx, dy) > THRESHOLD){
+      dragging = true;
+      unpick();
+      ghost = origin.cloneNode(true);
+      ghost.className = origin.className + " dragging";
+      document.body.appendChild(ghost);
+      origin.classList.add("ghost");
+      if(opts.onLift) opts.onLift(origin);
+    }
+    if(dragging && ghost){
+      ghost.style.left = e.clientX + "px";
+      ghost.style.top  = e.clientY + "px";
+      clearHover();
+      const t = targetUnder(e.clientX, e.clientY);
+      if(t) t.classList.add("over");
+    }
+  }
+  function onTileUp(e){
+    if(!origin) return;
+    try{ origin.releasePointerCapture(e.pointerId); }catch(err){}
+    if(dragging){ endDrag(e.clientX, e.clientY); return; }
+    /* a tap, not a drag: pick it up, or put a picked tile down */
+    const tile = origin; origin = null;
+    if(picked === tile){ unpick(); return; }
+    unpick();
+    picked = tile; tile.classList.add("picked");
+    if(opts.onPick) opts.onPick(tile);
+  }
+  function onTargetTap(e){
+    if(!picked) return;
+    const t = e.currentTarget, tile = picked;
+    unpick();
+    opts.onDrop(tile, t);
+  }
+  return {
+    tile(el){
+      el.addEventListener("pointerdown", onTileDown);
+      el.addEventListener("pointermove", onTileMove);
+      el.addEventListener("pointerup", onTileUp);
+      el.addEventListener("pointercancel", () => { if(ghost){ghost.remove();ghost=null;} if(origin) origin.classList.remove("ghost"); origin=null; dragging=false; clearHover(); });
+      el.addEventListener("dragstart", ev => ev.preventDefault());
+      return el;
+    },
+    target(el){ el.setAttribute("data-drop",""); el.addEventListener("click", onTargetTap); return el; },
+    reset(){ unpick(); if(ghost){ghost.remove();ghost=null;} origin=null; dragging=false; clearHover(); }
+  };
+}
+function makeTile(letter, cls, small){
+  const b = document.createElement("button");
+  b.className = "tile " + (small ? "sm " : "") + (cls || "");
+  b.textContent = show(letter);
+  b.dataset.letter = letter;
+  b.setAttribute("aria-label", "letter " + letter.toUpperCase());
+  return b;
+}
+function flashRight(el){ el.classList.add("right"); setTimeout(() => el.classList.remove("right"), 480); }
+function flashWrong(el){ el.classList.add("wrong"); setTimeout(() => el.classList.remove("wrong"), 420); }
+function record(id, n){ if((S.best[id]||0) < n){ S.best[id] = n; save(); } }
+
+/* =====================================================================
+   1. ALPHABET BOARD — free exploring, one click per letter
+   ===================================================================== */
+ACTIVITIES.board = {
+  name:"Alphabet Board", group:"phonics", color:"c-sky", emoji:"🔤", skill:"click",
+  what:"Click any letter to hear its name, its sound and a word.",
+  start(){
+    setPrompt('Click a letter to hear it.', "Click a letter to hear it!");
+    const panel = document.createElement("div");
+    panel.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:4px;min-height:190px;justify-content:center";
+    panel.innerHTML = '<div class="pic" id="bPic">👋</div><div class="bigword" id="bWord">Pick a letter</div>';
+    const wrap = document.createElement("div");
+    wrap.className = "tilewrap";
+    ALPHA.forEach((l, i) => {
+      const t = makeTile(l, TILECOLORS[i % TILECOLORS.length], true);
+      t.addEventListener("click", () => {
+        flashRight(t);
+        sayFull(l, true);
+        markSeen(l);
+        document.getElementById("bPic").textContent = BY[l].emoji;
+        document.getElementById("bWord").textContent = show(l) + "   " + BY[l].word;
+        const distinct = Object.keys(S.seen).length;
+        record("board", Math.min(5, Math.round(distinct*5/26)));
+        if(distinct === 26) cheer("All 26!", "You visited every letter.", 2600);
+      });
+      wrap.appendChild(t);
+    });
+    playArea.append(panel, wrap);
+  }
+};
+
+/* =====================================================================
+   2. WHICH LETTER? — hear a letter name, click it. Choices grow 3 -> 6.
+   ===================================================================== */
+ACTIVITIES.which = {
+  name:"Find the Letter", group:"phonics", color:"c-poppy", emoji:"👂", skill:"click",
+  what:"Listen for a letter, then click the one you heard.",
+  start(){
+    let round = 0, got = 0;
+    const wrap = document.createElement("div");
+    wrap.className = "tilewrap";
+    playArea.appendChild(wrap);
+    function next(){
+      if(round >= 5){
+        cheer("5 out of 5!", "You found every letter.", 2600);
+        setTimeout(goHome, 2600); return;
+      }
+      setDots(got, 5);
+      const n = [3,3,4,5,6][round];
+      const target = pick(ALPHA);
+      const others = sample(ALPHA, n - 1, [target]);
+      const opts = shuffle(others.concat([target]));
+      wrap.innerHTML = "";
+      const tiles = opts.map((l, i) => makeTile(l, TILECOLORS[i % TILECOLORS.length]));
+      setPrompt('Find the letter <b>' + tiles[opts.indexOf(target)].textContent + '</b>', "Find the letter " + target.toUpperCase());
+      opts.forEach((l, i) => {
+        const t = tiles[i];
+        t.addEventListener("click", () => {
+          if(l === target){
+            flashRight(t); addStar(); markSeen(l); got++; round++;
+            record("which", got);
+            say(pick(PRAISE), {now:true}); sayFull(l);
+            setDots(got, 5);
+            setTimeout(next, 1900);
+          } else {
+            flashWrong(t);
+            say(pick(AGAIN), {now:true});
+            say("Find " + target.toUpperCase());
+          }
+        });
+        wrap.appendChild(t);
+      });
+    }
+    next();
+  }
+};
+
+/* =====================================================================
+   3. LETTER SOUNDS — hear the sound, find the letter that makes it
+   ===================================================================== */
+ACTIVITIES.sounds = {
+  name:"Letter Sounds", group:"phonics", color:"c-sun", emoji:"👄", skill:"click",
+  what:"Hear a sound. Which letter makes that sound?",
+  start(){
+    let round = 0, got = 0;
+    const mouth = document.createElement("div");
+    mouth.className = "pic"; mouth.textContent = "👂";
+    const wrap = document.createElement("div"); wrap.className = "tilewrap";
+    playArea.append(mouth, wrap);
+    const slow = {rate: Math.max(0.55, S.rate - 0.2)};
+    function askAgain(d){
+      say("Which letter says", {now:true});
+      say(d.sound, slow);
+      pause(260);
+      say(d.sound, slow);
+    }
+    function next(){
+      if(round >= 5){
+        cheer("Sound expert!", "5 sounds matched.", 2600);
+        setTimeout(goHome, 2600); return;
+      }
+      setDots(got, 5);
+      const d = pick(LETTERS);
+      const others = sample(ALPHA, [2,2,3,3,3][round], [d.l]);
+      const opts = shuffle(others.concat([d.l]));
+      wrap.innerHTML = "";
+      promptText.innerHTML = "Which letter says this sound?";
+      lastPrompt = null;
+      document.getElementById("sayBtn").onclick = () => askAgain(d);
+      askAgain(d);
+      opts.forEach((l, i) => {
+        const t = makeTile(l, TILECOLORS[i % TILECOLORS.length]);
+        t.addEventListener("click", () => {
+          if(l === d.l){
+            flashRight(t); addStar(); markSeen(l); got++; round++;
+            record("sounds", Math.min(5, got));
+            say(pick(PRAISE), {now:true});
+            sayFull(l);
+            setDots(got, 5);
+            setTimeout(next, 2200);
+          } else {
+            flashWrong(t);
+            say(l.toUpperCase() + " says " + BY[l].sound + ".", {now:true});
+            askAgain(d);
+          }
+        });
+        wrap.appendChild(t);
+      });
+    }
+    onCleanup(() => { document.getElementById("sayBtn").onclick = null; });
+    next();
+  }
+};
+
+/* =====================================================================
+   4. BEGINNING SOUNDS — picture in, first letter out
+   ===================================================================== */
+ACTIVITIES.begin = {
+  name:"Beginning Sounds", group:"phonics", color:"c-grass", emoji:"🍎", skill:"click",
+  what:"See a picture. Which letter does the word start with?",
+  start(){
+    let round = 0, got = 0;
+    const pic = document.createElement("div");
+    pic.className = "pic";
+    const wrap = document.createElement("div");
+    wrap.className = "tilewrap";
+    playArea.append(pic, wrap);
+    function next(){
+      if(round >= 5){
+        cheer("Super sounding!", "5 beginning sounds.", 2600);
+        setTimeout(goHome, 2600); return;
+      }
+      setDots(got, 5);
+      const d = pick(START_WORDS);
+      const others = sample(ALPHA, 2, [d.l]);
+      const opts = shuffle(others.concat([d.l]));
+      pic.textContent = d.emoji;
+      wrap.innerHTML = "";
+      setPrompt('What does <b>' + d.word + '</b> start with?', "");
+      say(d.word + "!", {now:true});
+      say(d.sound, {rate: Math.max(0.6, S.rate - 0.15)});
+      say(d.word + ". Which letter does it start with?");
+      lastPrompt = d.word + ". Which letter does it start with?";
+      opts.forEach((l, i) => {
+        const t = makeTile(l, TILECOLORS[i % TILECOLORS.length]);
+        t.addEventListener("click", () => {
+          if(l === d.l){
+            flashRight(t); addStar(); markSeen(l); got++; round++;
+            record("begin", got);
+            say(pick(PRAISE), {now:true});
+            say(d.word + " starts with " + d.l.toUpperCase());
+            setDots(got, 5);
+            setTimeout(next, 2100);
+          } else {
+            flashWrong(t);
+            say(pick(AGAIN), {now:true});
+            say("Listen: " + d.sound, {rate: Math.max(0.6, S.rate - 0.15)});
+          }
+        });
+        wrap.appendChild(t);
+      });
+    }
+    next();
+  }
+};
+
+/* =====================================================================
+   5. BUILD A WORD — drag three letters into the slots, then blend it
+   ===================================================================== */
+ACTIVITIES.build = {
+  name:"Build a Word", group:"phonics", color:"c-grape", emoji:"🧩", skill:"drag",
+  what:"Drag the letters into the boxes to make the word.",
+  start(){
+    let round = 0, got = 0;
+    const pic = document.createElement("div"); pic.className = "pic";
+    const slots = document.createElement("div"); slots.className = "slots";
+    const wrap = document.createElement("div"); wrap.className = "tilewrap";
+    const hint = document.createElement("div"); hint.className = "hint";
+    hint.textContent = "Drag a letter — or tap a letter, then tap a box.";
+    playArea.append(pic, slots, wrap, hint);
+
+    const drag = dragSystem({
+      onDrop(tile, slot){
+        if(slot.classList.contains("filled")) return;
+        const want = slot.dataset.want;
+        if(tile.dataset.letter === want){
+          slot.textContent = tile.textContent;
+          slot.classList.add("filled");
+          tile.remove();
+          say(BY[want].sound, {now:true, rate: Math.max(0.6, S.rate - 0.2)});
+          check();
+        } else {
+          flashWrong(tile);
+          say("That one makes " + BY[tile.dataset.letter].sound + ". Try another.", {now:true});
+        }
+      },
+      onPick(tile){ say(BY[tile.dataset.letter].sound, {now:true, rate: Math.max(0.6, S.rate - 0.2)}); }
+    });
+    onCleanup(() => drag.reset());
+
+    let word = null;
+    function check(){
+      if(slots.querySelectorAll(".filled").length !== word.w.length) return;
+      got++; round++; addStar(2);
+      record("build", got);
+      word.w.split("").forEach(l => markSeen(l));
+      setDots(got, 5);
+      confetti();
+      say("Listen.", {now:true});
+      word.w.split("").forEach(l => { say(BY[l].sound, {rate:0.55}); pause(120); });
+      pause(200);
+      say(word.w + "! " + pick(PRAISE), {rate:0.8});
+      setTimeout(next, 3600);
+    }
+    function next(){
+      if(round >= 5){
+        cheer("Word builder!", "You built 5 words.", 2800);
+        setTimeout(goHome, 2800); return;
+      }
+      setDots(got, 5);
+      drag.reset();
+      word = pick(CVC);
+      pic.textContent = word.emoji;
+      slots.innerHTML = ""; wrap.innerHTML = "";
+      setPrompt('Build the word <b>' + word.w.split("").map(show).join("") + '</b>', "Build the word " + word.w);
+      word.w.split("").forEach(l => {
+        const s = document.createElement("div");
+        s.className = "slot"; s.dataset.want = l;
+        drag.target(s);
+        slots.appendChild(s);
+      });
+      const extra = sample(ALPHA, 2, word.w.split(""));
+      shuffle(word.w.split("").concat(extra)).forEach((l, i) => {
+        const t = makeTile(l, TILECOLORS[i % TILECOLORS.length]);
+        drag.tile(t);
+        wrap.appendChild(t);
+      });
+    }
+    next();
+  }
+};
+</script>
+
+<script>
+/* =====================================================================
+   6. BUBBLE POP — move the pointer, then click. The first trackpad
+   skill: getting the pointer where you want it and keeping it there.
+   ===================================================================== */
+ACTIVITIES.bubbles = {
+  name:"Bubble Pop", group:"trackpad", color:"c-sky", emoji:"🫧", skill:"point + click",
+  what:"Move the pointer onto the right letter, then click to pop it.",
+  start(){
+    let got = 0, target = pick(ALPHA), raf = null;
+    const box = document.createElement("div"); box.className = "bubblebox";
+    const cv = document.createElement("canvas"); cv.id = "bubbleCanvas";
+    box.appendChild(cv); playArea.appendChild(box);
+    const g = cv.getContext("2d");
+    const COLORS = ["#E4572E","#F4B942","#3E92CC","#8A5FBF","#58A55C"];
+    let bubbles = [], mx = -999, my = -999;
+
+    function size(){
+      const r = box.getBoundingClientRect();
+      cv.width = Math.max(320, r.width); cv.height = Math.max(300, r.height);
+    }
+    function spawn(letter){
+      const r = 46 + Math.random() * 12;
+      return {
+        x: r + Math.random() * (cv.width - r*2),
+        y: r + Math.random() * (cv.height - r*2),
+        vx: reduceMotion ? 0 : (Math.random()-0.5) * 0.75,
+        vy: reduceMotion ? 0 : (Math.random()-0.5) * 0.75,
+        r, l: letter, disp: show(letter), c: COLORS[Math.floor(Math.random()*COLORS.length)], pop: 0
+      };
+    }
+    function fill(){
+      bubbles = [];
+      const others = sample(ALPHA, 5, [target]);
+      [target].concat(others).forEach(l => bubbles.push(spawn(l)));
+      bubbles = shuffle(bubbles);
+    }
+    function ask(){
+      target = pick(ALPHA);
+      fill();
+      const shown = (bubbles.find(b => b.l === target) || {}).disp || show(target);
+      setPrompt('Pop the letter <b>' + shown + '</b>', "Pop the letter " + target.toUpperCase());
+    }
+    function draw(){
+      g.clearRect(0,0,cv.width,cv.height);
+      bubbles.forEach(b => {
+        b.x += b.vx; b.y += b.vy;
+        if(b.x < b.r || b.x > cv.width - b.r) b.vx *= -1;
+        if(b.y < b.r || b.y > cv.height - b.r) b.vy *= -1;
+        const hover = Math.hypot(mx - b.x, my - b.y) < b.r;
+        g.save(); g.translate(b.x, b.y);
+        if(hover) g.scale(1.1, 1.1);
+        g.beginPath(); g.arc(0,0,b.r,0,Math.PI*2);
+        g.fillStyle = b.c; g.fill();
+        g.lineWidth = hover ? 9 : 5; g.strokeStyle = hover ? "#F6C445" : "#2A2622"; g.stroke();
+        g.beginPath(); g.arc(-b.r*0.32,-b.r*0.34,b.r*0.19,0,Math.PI*2);
+        g.fillStyle = "rgba(255,255,255,.55)"; g.fill();
+        g.fillStyle = "#fff"; g.font = '700 ' + Math.round(b.r*1.08) + 'px Andika, sans-serif';
+        g.textAlign = "center"; g.textBaseline = "middle";
+        g.fillText(b.disp, 0, 2);
+        g.restore();
+      });
+      raf = requestAnimationFrame(draw);
+    }
+    cv.addEventListener("pointermove", e => {
+      const r = cv.getBoundingClientRect();
+      mx = e.clientX - r.left; my = e.clientY - r.top;
+    });
+    cv.addEventListener("pointerleave", () => { mx = my = -999; });
+    cv.addEventListener("click", e => {
+      const r = cv.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      const hit = bubbles.slice().reverse().find(b => Math.hypot(x - b.x, y - b.y) < b.r);
+      if(!hit) return;
+      if(hit.l === target){
+        bubbles = bubbles.filter(b => b !== hit);
+        got++; addStar(); markSeen(target); record("bubbles", Math.min(5, got));
+        setDots(Math.min(got,5), 5);
+        say(pick(PRAISE), {now:true}); sayFull(target);
+        if(got >= 5){
+          cheer("Pop pop pop!", "5 bubbles popped.", 2600);
+          setTimeout(goHome, 2600);
+        } else setTimeout(ask, 1800);
+      } else {
+        say("That is " + hit.l.toUpperCase() + ". Look for " + target.toUpperCase(), {now:true});
+      }
+    });
+    const onResize = () => { size(); fill(); };
+    addEventListener("resize", onResize);
+    onCleanup(() => { cancelAnimationFrame(raf); removeEventListener("resize", onResize); });
+    size(); setDots(0,5); ask(); draw();
+  }
+};
+
+/* =====================================================================
+   7. BIG AND LITTLE — drag. Always shows mixed case: sorting a letter
+   by case is the kindergarten skill, the drag is the trackpad one.
+   ===================================================================== */
+ACTIVITIES.bins = {
+  name:"Big and Little", group:"trackpad", color:"c-poppy", emoji:"🧺", skill:"drag",
+  what:"Drag each letter into the BIG basket or the little basket.",
+  start(){
+    let round = 0, left = 0;
+    const wrap = document.createElement("div"); wrap.className = "tilewrap";
+    const bins = document.createElement("div"); bins.className = "bins";
+    const hint = document.createElement("div"); hint.className = "hint";
+    hint.textContent = "Press and hold, then move — or tap a letter, then tap a basket.";
+    playArea.append(wrap, bins, hint);
+
+    const drag = dragSystem({
+      onDrop(tile, bin){
+        const isUpper = tile.textContent === tile.textContent.toUpperCase();
+        const wantUpper = bin.dataset.kind === "upper";
+        if(isUpper === wantUpper){
+          const l = tile.dataset.letter;
+          markSeen(l); addStar();
+          tile.remove();
+          const mini = document.createElement("span");
+          mini.className = "tile sm " + pick(TILECOLORS);
+          mini.style.cssText = "width:44px;height:44px;font-size:26px;box-shadow:0 3px 0 var(--ink)";
+          mini.textContent = isUpper ? l.toUpperCase() : l;
+          bin.querySelector(".caught").appendChild(mini);
+          say(l.toUpperCase() + ", " + (isUpper ? "big" : "little"), {now:true});
+          left--;
+          if(left === 0){ round++; record("bins", Math.round(round*5/4)); setDots(round,4); confetti(); setTimeout(next, 1200); }
+        } else {
+          flashWrong(tile);
+          say(isUpper ? "That is a BIG letter." : "That is a little letter.", {now:true});
+        }
+      },
+      onPick(tile){ say(tile.dataset.letter.toUpperCase(), {now:true}); }
+    });
+    onCleanup(() => drag.reset());
+
+    function next(){
+      if(round >= 4){
+        cheer("All sorted!", "Big letters and little letters.", 2600);
+        setTimeout(goHome, 2600); return;
+      }
+      setDots(round,4);
+      drag.reset();
+      wrap.innerHTML = ""; bins.innerHTML = "";
+      setPrompt('Put each letter in the right basket.', "Drag each letter into the right basket. Big letters on the left, little letters on the right.");
+      [["upper","BIG letters","Aa".slice(0,1)],["lower","little letters","a"]].forEach(([kind, label]) => {
+        const b = document.createElement("div");
+        b.className = "bin"; b.dataset.kind = kind;
+        b.innerHTML = '<h4>' + label + '</h4><div class="caught"></div>';
+        drag.target(b);
+        bins.appendChild(b);
+      });
+      const letters = sample(ALPHA, 4);
+      left = 4;
+      letters.forEach((l, i) => {
+        const t = document.createElement("button");
+        t.className = "tile " + TILECOLORS[i % TILECOLORS.length];
+        t.textContent = Math.random() < 0.5 ? l.toUpperCase() : l;
+        t.dataset.letter = l;
+        drag.tile(t);
+        wrap.appendChild(t);
+      });
+    }
+    setDots(0,4); next();
+  }
+};
+
+/* =====================================================================
+   8. DOUBLE-CLICK DOORS — two fast clicks in the same spot, which is
+   the click a Chromebook needs to open a file.
+   ===================================================================== */
+ACTIVITIES.doors = {
+  name:"Knock Knock", group:"trackpad", color:"c-grape", emoji:"🚪", skill:"double-click",
+  what:"Double-click a door to see who is hiding behind it.",
+  start(){
+    let opened = 0, singles = 0;
+    const wrap = document.createElement("div"); wrap.className = "tilewrap";
+    const hint = document.createElement("div"); hint.className = "hint";
+    hint.textContent = "Click twice, fast, without moving.";
+    playArea.append(wrap, hint);
+    setPrompt('Double-click a door!', "Double click a door! Click two times, fast.");
+    const picks = sample(START_WORDS, 6);
+    picks.forEach(d => {
+      const door = document.createElement("button");
+      door.className = "door";
+      door.textContent = "🚪";
+      door.setAttribute("aria-label", "closed door");
+      let halfTimer = null;
+      door.addEventListener("click", () => {
+        if(door.classList.contains("open")) return;
+        door.classList.add("half");
+        clearTimeout(halfTimer);
+        halfTimer = setTimeout(() => {
+          door.classList.remove("half");
+          singles++;
+          if(singles === 2 || singles === 5) say("Two clicks, fast!", {now:true});
+        }, 650);
+      });
+      door.addEventListener("dblclick", () => {
+        if(door.classList.contains("open")) return;
+        clearTimeout(halfTimer);
+        singles = 0;
+        door.classList.remove("half");
+        door.classList.add("open");
+        door.textContent = d.emoji;
+        door.setAttribute("aria-label", d.word);
+        opened++; addStar(); markSeen(d.l);
+        record("doors", Math.round(opened*5/6));
+        setDots(Math.min(opened,5), 5);
+        say(d.word + "!", {now:true});
+        sayFull(d.l);
+        if(opened === 6){
+          setTimeout(() => { cheer("Every door open!", "Six double-clicks.", 2800); setTimeout(goHome, 2800); }, 1400);
+        }
+      });
+      wrap.appendChild(door);
+    });
+    setDots(0,5);
+  }
+};
+
+/* =====================================================================
+   9. SCROLL AND FIND — two-finger scrolling, which is how she will
+   move down a page in class.
+   ===================================================================== */
+ACTIVITIES.scroll = {
+  name:"Scroll and Find", group:"trackpad", color:"c-grass", emoji:"📜", skill:"two-finger scroll",
+  what:"Scroll the long list with two fingers to find the letter.",
+  start(){
+    let round = 0, got = 0;
+    const box = document.createElement("div"); box.className = "scrollbox";
+    const hint = document.createElement("div"); hint.className = "hint";
+    hint.textContent = "Put two fingers on the trackpad and slide them up or down.";
+    playArea.append(box, hint);
+    function next(){
+      if(round >= 4){
+        cheer("You found them all!", "Scrolling like a pro.", 2600);
+        setTimeout(goHome, 2600); return;
+      }
+      setDots(got, 4);
+      const list = shuffle(ALPHA);
+      const target = list[18 + Math.floor(Math.random() * 7)]; /* always well below the fold */
+      box.innerHTML = "";
+      box.scrollTop = 0;
+      const tiles = list.map((l, i) => makeTile(l, TILECOLORS[i % TILECOLORS.length]));
+      setPrompt('Scroll down to find <b>' + tiles[list.indexOf(target)].textContent + '</b>', "Scroll down with two fingers to find " + target.toUpperCase());
+      list.forEach((l, i) => {
+        const t = tiles[i];
+        t.style.cssText = "width:100%;height:72px;font-size:40px;flex:none";
+        t.addEventListener("click", () => {
+          if(l === target){
+            flashRight(t); addStar(); markSeen(l); got++; round++;
+            record("scroll", Math.round(got*5/4));
+            say(pick(PRAISE), {now:true}); sayLetterName(l);
+            setDots(got, 4);
+            setTimeout(next, 1600);
+          } else {
+            flashWrong(t);
+            say("That is " + l.toUpperCase() + ". Keep scrolling for " + target.toUpperCase(), {now:true});
+          }
+        });
+        box.appendChild(t);
+      });
+    }
+    setDots(0,4); next();
+  }
+};
+
+/* =====================================================================
+  10. TRACE A LETTER — press, hold and follow. The hardest trackpad
+   move and correct letter formation in one: strokes start where a
+   pencil starts, and run in the order she is taught to write them.
+   ===================================================================== */
+const TRACE = {
+  l:["M62,42 L62,214 L152,214"],
+  t:["M40,48 L160,48","M100,48 L100,214"],
+  i:["M100,48 L100,214"],
+  o:["M100,44 C62,44 46,84 46,131 C46,178 62,218 100,218 C138,218 154,178 154,131 C154,84 138,44 100,44"],
+  c:["M152,74 C138,52 120,44 100,44 C62,44 46,84 46,131 C46,178 62,218 100,218 C120,218 138,210 152,188"],
+  v:["M52,46 L100,214 L148,46"],
+  u:["M52,46 L52,152 C52,192 72,218 100,218 C128,218 148,192 148,152 L148,46"],
+  z:["M52,50 L148,50 L52,210 L148,210"],
+  x:["M52,46 L148,214","M148,46 L52,214"],
+  h:["M52,46 L52,214","M148,46 L148,214","M52,130 L148,130"],
+  a:["M100,44 L54,214","M100,44 L146,214","M72,158 L128,158"]
+};
+const TRACE_ORDER = ["l","i","t","o","c","v","u","x","z","h","a"];
+
+ACTIVITIES.trace = {
+  name:"Trace a Letter", group:"trackpad", color:"c-sun", emoji:"✏️", skill:"press + drag",
+  what:"Hold down and slide along the line to write the letter.",
+  start(){
+    let idx = 0;
+    const queue = shuffle(TRACE_ORDER.slice(0, 7)).slice(0, 4);
+    const box = document.createElement("div"); box.className = "tracebox";
+    const hint = document.createElement("div"); hint.className = "hint";
+    hint.textContent = "Start on the green dot. Hold the click down the whole way.";
+    const skip = document.createElement("button"); skip.className = "pill"; skip.textContent = "Next letter →";
+    box.innerHTML = '<svg class="tracesvg" id="tsvg" viewBox="0 0 200 260" width="290" height="377" aria-hidden="true"></svg>';
+    playArea.append(box, hint, skip);
+    const svg = box.querySelector("#tsvg");
+    const NS = "http://www.w3.org/2000/svg";
+    let strokes = [], si = 0, letter = null, drawing = false, cps = [], ci = 0, inkPath = null, len = 0;
+
+    function el(tag, attrs){ const e = document.createElementNS(NS, tag); for(const k in attrs) e.setAttribute(k, attrs[k]); return e; }
+    function buildStroke(){
+      const d = strokes[si];
+      /* guide corridor + dotted centre line + the ink that follows her */
+      svg.appendChild(el("path", {d, class:"guide"}));
+      svg.appendChild(el("path", {d, class:"dash"}));
+      inkPath = el("path", {d, class:"ink"});
+      svg.appendChild(inkPath);
+      len = inkPath.getTotalLength();
+      inkPath.style.strokeDasharray = len;
+      inkPath.style.strokeDashoffset = len;
+      cps = [];
+      const step = Math.max(9, len / 26);
+      for(let t = 0; t <= len; t += step) cps.push(inkPath.getPointAtLength(t));
+      cps.push(inkPath.getPointAtLength(len));
+      ci = 0;
+      const s = cps[0], e2 = cps[cps.length-1];
+      svg.appendChild(el("circle", {cx:s.x, cy:s.y, r:15, class:"startdot"}));
+      svg.appendChild(el("circle", {cx:e2.x, cy:e2.y, r:10, class:"endflag"}));
+    }
+    function loadLetter(){
+      if(idx >= queue.length){
+        cheer("You wrote them!", "4 letters traced.", 2800);
+        setTimeout(goHome, 2800); return;
+      }
+      setDots(idx, 4);
+      letter = queue[idx];
+      strokes = TRACE[letter]; si = 0;
+      svg.innerHTML = "";
+      setPrompt('Trace the letter <b>' + letter.toUpperCase() + '</b>', "Trace the letter " + letter.toUpperCase() + ". Start on the green dot and hold it down.");
+      buildStroke();
+    }
+    function toSvg(e){
+      const r = svg.getBoundingClientRect();
+      return {x:(e.clientX - r.left) / r.width * 200, y:(e.clientY - r.top) / r.height * 260};
+    }
+    const TOL = 40;
+    svg.addEventListener("pointerdown", e => {
+      const p = toSvg(e);
+      if(Math.hypot(p.x - cps[ci].x, p.y - cps[ci].y) < TOL){
+        drawing = true;
+        try{ svg.setPointerCapture(e.pointerId); }catch(err){}
+      } else {
+        say("Start on the green dot!", {now:true});
+      }
+    });
+    svg.addEventListener("pointermove", e => {
+      if(!drawing) return;
+      const p = toSvg(e);
+      let moved = false;
+      while(ci < cps.length - 1 && Math.hypot(p.x - cps[ci+1].x, p.y - cps[ci+1].y) < TOL){ ci++; moved = true; }
+      if(moved){
+        inkPath.style.strokeDashoffset = len - (ci / (cps.length - 1)) * len;
+        if(ci >= cps.length - 1) finishStroke();
+      }
+    });
+    svg.addEventListener("pointerup", () => {
+      if(drawing && ci < cps.length - 1) say("Keep holding it down. Start again from where you stopped.", {now:true});
+      drawing = false;
+    });
+    svg.addEventListener("pointercancel", () => { drawing = false; });
+    function finishStroke(){
+      drawing = false;
+      inkPath.setAttribute("class", "done-stroke");
+      si++;
+      if(si < strokes.length){
+        say("Now the next line!", {now:true});
+        buildStroke();
+      } else {
+        addStar(2); markSeen(letter);
+        idx++;
+        record("trace", Math.round(idx*5/4));
+        setDots(idx, 4);
+        confetti();
+        say(pick(PRAISE), {now:true});
+        sayFull(letter);
+        setTimeout(loadLetter, 2600);
+      }
+    }
+    skip.addEventListener("click", () => { idx++; loadLetter(); });
+    setDots(0,4); loadLetter();
+  }
+};
+</script>
+
+<script>
+/* =====================================================================
+   SHEETS — settings and the grown-ups panel
+   ===================================================================== */
+const sheetHost = document.getElementById("sheetHost");
+function closeSheet(){ sheetHost.innerHTML = ""; }
+function openSheet(html, wire){
+  sheetHost.innerHTML = '<div class="scrim"><div class="sheet" role="dialog" aria-modal="true">' + html + '</div></div>';
+  const scrim = sheetHost.querySelector(".scrim");
+  scrim.addEventListener("click", e => { if(e.target === scrim) closeSheet(); });
+  if(wire) wire(sheetHost);
+}
+function seg(name, options, value){
+  return '<div class="seg">' + options.map(o =>
+    '<button data-seg="' + name + '" data-val="' + o[0] + '" aria-pressed="' + (o[0] === value) + '">' + o[1] + '</button>'
+  ).join("") + '</div>';
+}
+document.getElementById("settingsBtn").addEventListener("click", () => {
+  openSheet(
+    '<h2>Settings</h2><p class="sub">Set it up the way her class does it.</p>' +
+    '<div class="row"><span class="lab">Letters look like</span>' + seg("caseMode", [["upper","A B C"],["lower","a b c"],["both","A a B b"]], S.caseMode) + '</div>' +
+    '<div class="row"><span class="lab">Voice</span>' + seg("speech", [[ "on","On"],["off","Off"]], S.speech ? "on" : "off") + '</div>' +
+    '<div class="row"><span class="lab">Voice speed</span>' + seg("rate", [["0.68","Slow"],["0.82","Just right"],["0.98","Quick"]], String(S.rate)) + '</div>' +
+    '<div class="row"><span class="lab">Start over</span><button class="pill" id="resetBtn">Clear stars</button></div>' +
+    '<div class="row" style="justify-content:flex-end"><button class="pill" id="doneBtn">Done</button></div>',
+    host => {
+      host.querySelectorAll("[data-seg]").forEach(b => b.addEventListener("click", () => {
+        const k = b.dataset.seg, v = b.dataset.val;
+        if(k === "caseMode") S.caseMode = v;
+        if(k === "speech")   S.speech = (v === "on");
+        if(k === "rate")     S.rate = parseFloat(v);
+        save();
+        host.querySelectorAll('[data-seg="' + k + '"]').forEach(o => o.setAttribute("aria-pressed", o === b));
+        if(k === "rate" || k === "speech") say("Hello! This is my voice.", {now:true});
+      }));
+      host.querySelector("#doneBtn").addEventListener("click", () => { closeSheet(); if(!current) renderHome(); });
+      host.querySelector("#resetBtn").addEventListener("click", e => {
+        if(e.target.dataset.sure){
+          S = Object.assign({}, defaults, {caseMode:S.caseMode, speech:S.speech, rate:S.rate});
+          save(); closeSheet(); renderHome();
+        } else { e.target.dataset.sure = "1"; e.target.textContent = "Really clear? Tap again"; }
+      });
+    }
+  );
+});
+document.getElementById("grownupsBtn").addEventListener("click", () => {
+  const seen = Object.keys(S.seen).length;
+  const strong = ALPHA.filter(l => (S.seen[l]||0) >= 3).length;
+  openSheet(
+    '<h2>For grown-ups</h2><p class="sub">' + S.stars + ' stars &middot; ' + seen + ' of 26 letters practised &middot; ' + strong + ' practised three times or more</p>' +
+    '<div class="grid26">' + ALPHA.map(l => '<span class="' + ((S.seen[l]||0) ? "done" : "") + '">' + l.toUpperCase() + '</span>').join("") + '</div>' +
+    '<div class="row" style="border-top:3px dotted var(--manila-deep);margin-top:18px"></div>' +
+    '<ul class="tips">' +
+      '<li><b>Trackpad order.</b> Bubble Pop first (just moving the pointer), then Knock Knock, then the two dragging games. Trace a Letter is the hardest &mdash; it needs a click held down the whole way.</li>' +
+      '<li><b>Every drag also works as two taps.</b> Tap the letter, then tap where it goes. Let her use that until the drag itself clicks.</li>' +
+      '<li><b>Sounds, not names.</b> The voice says the <i>sound</i> a letter makes (&ldquo;mmm&rdquo;, not &ldquo;em&rdquo;) because that is what blends into words. Stretchy letters are held; b, d, p and t get the shortest possible &ldquo;uh&rdquo;.</li>' +
+      '<li><b>Case.</b> Kindergarten usually starts in capitals. Switch to <i>A a B b</i> in Settings once she is matching both.</li>' +
+      '<li><b>No losing.</b> A wrong answer never takes a star or ends a round &mdash; it just asks again.</li>' +
+      '<li><b>Progress lives in this browser.</b> Stars and letters are stored on this device only, so her Chromebook and your machine keep separate counts.</li>' +
+    '</ul>' +
+    '<div class="row" style="justify-content:flex-end"><button class="pill" id="doneBtn2">Done</button></div>',
+    host => host.querySelector("#doneBtn2").addEventListener("click", closeSheet)
+  );
+});
+addEventListener("keydown", e => { if(e.key === "Escape"){ if(sheetHost.innerHTML) closeSheet(); else if(current) goHome(); } });
+
+/* Browsers will not speak until the page has been touched once; the
+   first click anywhere is that permission. */
+let warmed = false;
+addEventListener("pointerdown", () => {
+  if(warmed) return;
+  warmed = true;
+  if("speechSynthesis" in window && !voiceReady) pickVoice();
+  say("Hi! Let's play with letters.", {now:true});
+}, {once:false});
+
+renderHome();
+</script>
