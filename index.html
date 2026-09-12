@@ -190,6 +190,8 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:n
 .row:last-of-type{border-bottom:none}
 .row .lab{font-weight:800;font-size:18px;margin-right:auto}
 .seg{display:flex;border:3px solid var(--ink);border-radius:999px;overflow:hidden;background:#fff}
+input.pill{max-width:190px;font-size:17px;font-weight:700}
+input.pill::placeholder{color:#B8AC98;font-weight:600}
 select.pill{max-width:100%;appearance:none;-webkit-appearance:none;padding-right:34px;cursor:pointer;
   background-image:linear-gradient(45deg,transparent 50%,var(--ink) 50%),linear-gradient(135deg,var(--ink) 50%,transparent 50%);
   background-position:calc(100% - 19px) 19px,calc(100% - 13px) 19px;background-size:6px 6px,6px 6px;background-repeat:no-repeat}
@@ -263,6 +265,104 @@ select.pill{max-width:100%;appearance:none;-webkit-appearance:none;padding-right
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.001ms!important;transition-duration:.001ms!important}
 }
+
+/* ---------- Pip: the owl who does the talking ---------- */
+.pip{display:block;overflow:visible}
+.pip .wing{transform-box:fill-box;transform-origin:top center;transition:transform .25s ease}
+.pip .eye{transform-box:fill-box;transform-origin:center;animation:blink 6s infinite}
+.pip .eye.r{animation-delay:.08s}
+.pip .pupil{transform-box:fill-box;transform-origin:center;transition:transform .3s ease}
+.pip .brow{opacity:0;transition:opacity .2s ease}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.12)}}
+.pipwrap{display:inline-block;transform-origin:bottom center;animation:breathe 3.4s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+.pipwrap.happy{animation:hop .55s ease}
+.pipwrap.happy .wing{transform:rotate(-38deg)}
+.pipwrap.happy .pupil{transform:translateY(-2px) scale(1.12)}
+.pipwrap.oops{animation:tilt .6s ease}
+.pipwrap.oops .brow{opacity:1}
+.pipwrap.oops .pupil{transform:translateY(2px)}
+.pipwrap.party{animation:hop .45s ease 4}
+.pipwrap.party .wing{transform:rotate(-52deg)}
+@keyframes hop{0%,100%{transform:translateY(0) scale(1)}30%{transform:translateY(-16px) scale(1.06)}60%{transform:translateY(0) scale(.96,1.04)}}
+@keyframes tilt{0%,100%{transform:rotate(0)}30%{transform:rotate(-7deg)}65%{transform:rotate(5deg)}}
+
+/* Pip is the replay button on the stage: tapping him says it again */
+.prompt .say{
+  background:transparent;border:none;box-shadow:none;border-radius:18px;
+  width:96px;height:96px;padding:0;overflow:visible;position:relative;
+}
+.prompt .say:active{transform:translateY(3px);box-shadow:none}
+.prompt .say .pipwrap{display:block}
+.prompt .say .pip{width:88px;height:88px}
+.prompt .say::after{
+  content:"🔊";position:absolute;right:-2px;bottom:0;font-size:15px;background:#fff;
+  border:3px solid var(--ink);border-radius:50%;width:28px;height:28px;display:grid;place-items:center;
+}
+
+/* ---------- welcome band ---------- */
+.welcome{
+  display:flex;align-items:center;gap:16px;background:#fff;border:4px solid var(--ink);
+  border-radius:26px;box-shadow:0 6px 0 var(--ink);padding:14px 20px 14px 14px;margin-bottom:22px;
+}
+.welcome .pipwrap{flex:none}
+.welcome .pip{width:84px;height:84px}
+.bubble{
+  position:relative;background:var(--manila);border:3px solid var(--ink);border-radius:20px;
+  padding:12px 18px;font-size:clamp(17px,2.3vw,22px);font-weight:600;line-height:1.3;flex:1;text-wrap:balance;
+}
+.bubble::before{
+  content:"";position:absolute;left:-13px;top:26px;width:0;height:0;
+  border:10px solid transparent;border-right-color:var(--ink);border-left:0;
+}
+.bubble::after{
+  content:"";position:absolute;left:-8px;top:27px;width:0;height:0;
+  border:9px solid transparent;border-right-color:var(--manila);border-left:0;
+}
+.welcome .again{flex:none}
+
+/* ---------- sticker book ---------- */
+.stickers{
+  display:flex;flex-wrap:wrap;gap:10px;background:#fff;border:4px dashed var(--manila-deep);
+  border-radius:22px;padding:14px;min-height:74px;align-items:center;
+}
+.stickers .sticker{
+  font-size:34px;line-height:1;width:48px;height:48px;display:grid;place-items:center;
+  background:var(--manila);border:3px solid var(--ink);border-radius:50%;box-shadow:0 3px 0 var(--ink);
+  transform:rotate(var(--tilt,0deg));
+}
+.stickers .sticker.fresh{animation:slam .6s cubic-bezier(.2,1.6,.4,1)}
+@keyframes slam{0%{transform:scale(2.6) rotate(-22deg);opacity:0}60%{transform:scale(.92) rotate(var(--tilt,0deg));opacity:1}100%{transform:scale(1) rotate(var(--tilt,0deg))}}
+.stickers .empty{color:var(--ink-soft);font-weight:600;font-size:15px;padding:0 6px}
+.stickers .next{
+  margin-left:auto;font-size:14px;font-weight:800;color:var(--ink-soft);
+  display:flex;align-items:center;gap:7px;padding-right:4px;
+}
+.meter{width:92px;height:14px;border:3px solid var(--ink);border-radius:999px;background:var(--manila-deep);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--star);border-radius:999px;transition:width .5s cubic-bezier(.2,1.3,.4,1)}
+
+/* ---------- stuck-on-paper cards ---------- */
+.card:nth-child(3n+1){transform:rotate(-1.1deg)}
+.card:nth-child(3n+2){transform:rotate(.7deg)}
+.card:nth-child(3n+3){transform:rotate(-.4deg)}
+.card:hover,.card:focus-visible{transform:translateY(-4px) rotate(0deg) scale(1.02)}
+.card:active{transform:translateY(4px) rotate(0deg) scale(.99)}
+
+/* ---------- a star that flies home ---------- */
+.flystar{
+  position:fixed;z-index:90;pointer-events:none;font-size:34px;line-height:1;
+  transition:transform .72s cubic-bezier(.4,0,.5,1),opacity .72s ease;
+}
+.stars.bump{animation:bump .42s ease}
+@keyframes bump{0%,100%{transform:scale(1)}45%{transform:scale(1.25) rotate(-5deg)}}
+
+/* ---------- livelier tiles ---------- */
+.tile:hover,.tile:focus-visible{transform:translateY(-5px) rotate(-2deg);box-shadow:0 10px 0 var(--ink)}
+.tile:active{transform:translateY(5px) scale(.96);box-shadow:0 1px 0 var(--ink)}
+.door:hover{transform:translateY(-4px) rotate(-1.5deg)}
+@media (prefers-reduced-motion:reduce){
+  .pipwrap,.pip .eye{animation:none!important}
+}
 </style>
 
 <div class="app">
@@ -281,6 +381,11 @@ select.pill{max-width:100%;appearance:none;-webkit-appearance:none;padding-right
 
   <!-- HOME -->
   <div id="home">
+    <div class="welcome">
+      <span class="pipwrap" id="pipHome"></span>
+      <div class="bubble" id="pipSays">Hello! I'm Pip.</div>
+      <button class="iconbtn again" id="pipAgain" title="Say it again" aria-label="Say it again">🔊</button>
+    </div>
     <div class="shelf" style="margin-bottom:26px">
       <div class="shelf-head"><h2>Letters &amp; Sounds</h2><span class="rule"></span></div>
       <div class="cards" id="cardsPhonics"></div>
@@ -288,6 +393,10 @@ select.pill{max-width:100%;appearance:none;-webkit-appearance:none;padding-right
     <div class="shelf">
       <div class="shelf-head"><h2>Trackpad Practice</h2><span class="rule"></span></div>
       <div class="cards" id="cardsTrackpad"></div>
+    </div>
+    <div class="shelf" style="margin-top:26px">
+      <div class="shelf-head"><h2>My Sticker Book</h2><span class="rule"></span></div>
+      <div class="stickers" id="stickerBook"></div>
     </div>
     <p class="footnote" style="margin-top:30px">
       <button id="grownupsBtn">For grown-ups</button>
@@ -365,14 +474,23 @@ const TILECOLORS = ["t-poppy","t-sky","t-grape","t-grass","t-sun"];
    STATE
    ===================================================================== */
 const KEY = "alphabet-clubhouse-v1";
-const defaults = {stars:0, seen:{}, best:{}, caseMode:"upper", speech:true, rate:0.92, voiceName:null};
+const defaults = {stars:0, seen:{}, best:{}, caseMode:"upper", speech:true, rate:0.92,
+                  voiceName:null, sfx:true, kidName:"", stickers:[]};
 let S = Object.assign({}, defaults);
 try{ const raw = localStorage.getItem(KEY); if(raw) S = Object.assign({}, defaults, JSON.parse(raw)); }catch(e){}
 /* Older saves used slower rates that made the voice drone. */
 const RATE_MIGRATE = {"0.68":0.78, "0.82":0.92, "0.98":1.05};
 if(RATE_MIGRATE[String(S.rate)]) S.rate = RATE_MIGRATE[String(S.rate)];
+/* copy, never share the array in defaults */
+S.stickers = (S.stickers || []).slice();
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
-function addStar(n){ S.stars += (n||1); document.getElementById("starCount").textContent = S.stars; save(); }
+function addStar(n){
+  S.stars += (n||1);
+  document.getElementById("starCount").textContent = S.stars;
+  save();
+  sfxGood(); pipFace("happy", 900); flyStar();
+  setTimeout(checkSticker, 780);
+}
 function markSeen(l){ S.seen[l] = (S.seen[l]||0)+1; save(); }
 /* How the child should SEE a letter right now. */
 function show(l){
@@ -406,7 +524,8 @@ function scoreVoice(v){
   else if(/^en-(GB|AU|CA|IE|NZ)/i.test(lang)) sc += 16;
   else if(/^en/i.test(lang)) sc += 8;
   else sc -= 45;
-  if(/female|woman/i.test(nm)) sc += 6;
+  if(/female|woman/i.test(nm)) sc += 14;   /* warmer for a small child */
+  if(/(samantha|aria|jenny|libby|sonia|ava|allison|joanna|karen|michelle|emma)/i.test(nm)) sc += 10;
   return sc;
 }
 function rankedVoices(){
@@ -438,7 +557,8 @@ function speakNow(text, opts){
        repeated phrase read as canned. */
     const jitter = 0.98 + Math.random() * 0.04;
     u.rate  = (opts.rate  || S.rate) * jitter;
-    u.pitch = (opts.pitch || 1.03) * jitter;   /* pitched-up synth = chipmunk robot */
+    u.pitch  = (opts.pitch || 1.0) * jitter;   /* pitched-up synth = chipmunk robot */
+    u.volume = opts.volume || 0.92;            /* a warm voice does not shout */
     let done = false;
     const finish = () => { if(done) return; done = true; clearTimeout(guard); res(); };
     u.onend = finish; u.onerror = finish;
@@ -470,10 +590,26 @@ function sayFull(l, opts){
   const lead = opts.lead ? opts.lead + " " : "";
   say(lead + letterName(l) + " says " + d.sound + ", like " + d.word + "!", {now: !!opts.now});
 }
-const PRAISE = ["Yes!","Great job!","You got it!","Nice work!","Perfect!","Well done!","That's it!",
-                "Lovely!","Brilliant!","You're so quick!","Spot on!","Clever girl!"];
-const AGAIN  = ["Nearly! Try again.","Not quite — have another go.","Try one more time.",
-                "Close! Try again.","Ooh, so close. One more go.","Almost! Have another look."];
+/* Warmth lives in the words more than in any setting. These are the
+   things a patient grown-up says: togetherness, no hurry, never a
+   telling-off for getting it wrong. */
+const PRAISE = ["Oh, well done!","That's it! I knew you could do it.","Beautiful work!",
+                "You're doing so well!","Yes! Look at you go.","I'm so proud of you!",
+                "Lovely! That's exactly right.","Wonderful!","That's the one! Clever you.",
+                "Yes! You're getting so good at this.","Perfect!","Hooray! You found it."];
+const AGAIN  = ["That's okay. Let's try again.","Good try! Have another look.",
+                "Nearly! I'll help you — try again.","It's alright. Take your time.",
+                "Ooh, so close. Let's find it together.","Nice try! Let's have one more go.",
+                "Not that one, but keep going. You can do it."];
+function kidName(){ return (S.kidName || "").trim(); }
+function praise(){
+  const nm = kidName(), base = pick(PRAISE);
+  return (nm && Math.random() < 0.5) ? base.replace(/[!.]\s*$/, "") + ", " + nm + "!" : base;
+}
+function again(){
+  const nm = kidName(), base = pick(AGAIN);
+  return (nm && Math.random() < 0.4) ? base.replace(/[!.]\s*$/, "") + ", " + nm + "." : base;
+}
 const pick = a => a[Math.floor(Math.random() * a.length)];
 function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 function sample(arr, n, exclude){
@@ -512,6 +648,7 @@ function stepConf(){
   else { confRAF = null; conf.classList.add("hidden"); cx.clearRect(0,0,conf.width,conf.height); }
 }
 function cheer(title, sub, ms){
+  sfxWin(); pipFace("party", 2200);
   const el = document.getElementById("cheer");
   document.getElementById("cheerTitle").textContent = title;
   document.getElementById("cheerSub").textContent = sub || "";
@@ -549,6 +686,8 @@ function openActivity(id){
   document.getElementById("homeBtn").classList.remove("hidden");
   document.getElementById("pageTitle").textContent = a.name;
   playArea.innerHTML = ""; dotsEl.innerHTML = "";
+  const sb = document.getElementById("sayBtn");
+  if(sb && !sb.querySelector(".pipwrap")) sb.innerHTML = '<span class="pipwrap">' + PIP_SVG + '</span>';
   if("speechSynthesis" in window) speechSynthesis.cancel();
   speakQueue = Promise.resolve();
   a.start();
@@ -573,6 +712,10 @@ document.getElementById("sayBtn").addEventListener("click", () => { if(lastPromp
    ===================================================================== */
 function renderHome(){
   document.getElementById("starCount").textContent = S.stars;
+  const ph = document.getElementById("pipHome");
+  if(ph && !ph.innerHTML) ph.innerHTML = PIP_SVG;
+  pipHello(false);
+  renderStickers();
   const phon = document.getElementById("cardsPhonics");
   const trak = document.getElementById("cardsTrackpad");
   phon.innerHTML = ""; trak.innerHTML = "";
@@ -689,7 +832,8 @@ function makeTile(letter, cls, small){
   return b;
 }
 function flashRight(el){ el.classList.add("right"); setTimeout(() => el.classList.remove("right"), 480); }
-function flashWrong(el){ el.classList.add("wrong"); setTimeout(() => el.classList.remove("wrong"), 420); }
+function flashWrong(el){ el.classList.add("wrong"); sfxOops(); pipFace("oops", 900);
+  setTimeout(() => el.classList.remove("wrong"), 420); }
 function record(id, n){ if((S.best[id]||0) < n){ S.best[id] = n; save(); } }
 
 /* =====================================================================
@@ -755,12 +899,12 @@ ACTIVITIES.which = {
           if(l === target){
             flashRight(t); addStar(); markSeen(l); got++; round++;
             record("which", got);
-            sayFull(l, {now:true, lead: pick(PRAISE)});
+            sayFull(l, {now:true, lead: praise()});
             setDots(got, 5);
             setTimeout(next, 1900);
           } else {
             flashWrong(t);
-            say(pick(AGAIN) + " Find the letter " + letterName(target) + ".", {now:true});
+            say(again() + " Find the letter " + letterName(target) + ".", {now:true});
           }
         });
         wrap.appendChild(t);
@@ -809,7 +953,7 @@ ACTIVITIES.sounds = {
           if(l === d.l){
             flashRight(t); addStar(); markSeen(l); got++; round++;
             record("sounds", Math.min(5, got));
-            sayFull(l, {now:true, lead: pick(PRAISE)});
+            sayFull(l, {now:true, lead: praise()});
             setDots(got, 5);
             setTimeout(next, 2200);
           } else {
@@ -863,13 +1007,13 @@ ACTIVITIES.begin = {
           if(l === d.l){
             flashRight(t); addStar(); markSeen(l); got++; round++;
             record("begin", got);
-            say(pick(PRAISE), {now:true});
+            say(praise(), {now:true});
             say(d.word + " starts with " + d.l.toUpperCase());
             setDots(got, 5);
             setTimeout(next, 2100);
           } else {
             flashWrong(t);
-            say(pick(AGAIN) + " Listen.", {now:true});
+            say(again() + " Listen.", {now:true});
             say(d.sound, {rate: Math.max(0.55, S.rate - 0.25)});
           }
         });
@@ -907,7 +1051,7 @@ ACTIVITIES.build = {
           check();
         } else {
           flashWrong(tile);
-          say("That one says " + BY[tile.dataset.letter].sound + ". Try another one!", {now:true});
+          say("That one says " + BY[tile.dataset.letter].sound + ". Let's try a different one.", {now:true});
         }
       },
       onPick(tile){ say(BY[tile.dataset.letter].sound, {now:true, rate: Math.max(0.6, S.rate - 0.2)}); }
@@ -925,7 +1069,7 @@ ACTIVITIES.build = {
       say("Listen.", {now:true});
       word.w.split("").forEach(l => { say(BY[l].sound, {rate:0.55}); pause(120); });
       pause(200);
-      say(word.w + "! " + pick(PRAISE), {rate:0.8});
+      say(word.w + "! " + praise(), {rate:0.8});
       setTimeout(next, 3600);
     }
     function next(){
@@ -1032,16 +1176,17 @@ ACTIVITIES.bubbles = {
       const hit = bubbles.slice().reverse().find(b => Math.hypot(x - b.x, y - b.y) < b.r);
       if(!hit) return;
       if(hit.l === target){
+        sfxPop();
         bubbles = bubbles.filter(b => b !== hit);
         got++; addStar(); markSeen(target); record("bubbles", Math.min(5, got));
         setDots(Math.min(got,5), 5);
-        sayFull(target, {now:true, lead: pick(PRAISE)});
+        sayFull(target, {now:true, lead: praise()});
         if(got >= 5){
           cheer("Pop pop pop!", "5 bubbles popped.", 2600);
           setTimeout(goHome, 2600);
         } else setTimeout(ask, 1800);
       } else {
-        say("That one is " + letterName(hit.l) + ". Look for " + letterName(target) + "!", {now:true});
+        say("That one is " + letterName(hit.l) + ". Let's look for " + letterName(target) + " together.", {now:true});
       }
     });
     const onResize = () => { size(); fill(); };
@@ -1084,7 +1229,7 @@ ACTIVITIES.bins = {
           if(left === 0){ round++; record("bins", Math.round(round*5/4)); setDots(round,4); confetti(); setTimeout(next, 1200); }
         } else {
           flashWrong(tile);
-          say(isUpper ? "That is a BIG letter." : "That is a little letter.", {now:true});
+          say(isUpper ? "That one is a big letter. Try the other basket." : "That one is a little letter. Try the other basket.", {now:true});
         }
       },
       onPick(tile){ say(letterName(tile.dataset.letter), {now:true}); }
@@ -1207,12 +1352,12 @@ ACTIVITIES.scroll = {
           if(l === target){
             flashRight(t); addStar(); markSeen(l); got++; round++;
             record("scroll", Math.round(got*5/4));
-            say(pick(PRAISE), {now:true}); sayLetterName(l);
+            say(praise(), {now:true}); sayLetterName(l);
             setDots(got, 4);
             setTimeout(next, 1600);
           } else {
             flashWrong(t);
-            say("That one is " + letterName(l) + ". Keep scrolling for " + letterName(target) + "!", {now:true});
+            say("That one is " + letterName(l) + ". Keep scrolling, you'll find " + letterName(target) + ".", {now:true});
           }
         });
         box.appendChild(t);
@@ -1301,7 +1446,7 @@ ACTIVITIES.trace = {
         drawing = true;
         try{ svg.setPointerCapture(e.pointerId); }catch(err){}
       } else {
-        say("Start on the green dot!", {now:true});
+        say("Let's start on the green dot.", {now:true}); pipFace("oops", 800); sfxOops();
       }
     });
     svg.addEventListener("pointermove", e => {
@@ -1315,7 +1460,7 @@ ACTIVITIES.trace = {
       }
     });
     svg.addEventListener("pointerup", () => {
-      if(drawing && ci < cps.length - 1) say("Keep holding it down. Start again from where you stopped.", {now:true});
+      if(drawing && ci < cps.length - 1) say("That's okay! Hold the click down and carry on from where you stopped.", {now:true});
       drawing = false;
     });
     svg.addEventListener("pointercancel", () => { drawing = false; });
@@ -1324,7 +1469,7 @@ ACTIVITIES.trace = {
       inkPath.setAttribute("class", "done-stroke");
       si++;
       if(si < strokes.length){
-        say("Now the next line!", {now:true});
+        say(pick(["Lovely! Now the next line.","That's it! One more line.","Well done. Now the next line."]), {now:true});
         buildStroke();
       } else {
         addStar(2); markSeen(letter);
@@ -1332,7 +1477,7 @@ ACTIVITIES.trace = {
         record("trace", Math.round(idx*5/4));
         setDots(idx, 4);
         confetti();
-        sayFull(letter, {now:true, lead: pick(PRAISE)});
+        sayFull(letter, {now:true, lead: praise()});
         setTimeout(loadLetter, 2600);
       }
     }
@@ -1346,6 +1491,146 @@ ACTIVITIES.trace = {
 /* =====================================================================
    SHEETS — settings and the grown-ups panel
    ===================================================================== */
+/* =====================================================================
+   PIP — the owl who does the talking. Giving the voice a face is what
+   makes it read as someone caring rather than a machine reading out
+   words, so he reacts to every answer and he is the replay button.
+   ===================================================================== */
+const PIP_SVG = '<svg class="pip" viewBox="0 0 100 100" aria-hidden="true">' +
+  '<path d="M28 26 L22 8 L41 18 Z" fill="#D9932E" stroke="#2A2622" stroke-width="3" stroke-linejoin="round"/>' +
+  '<path d="M72 26 L78 8 L59 18 Z" fill="#D9932E" stroke="#2A2622" stroke-width="3" stroke-linejoin="round"/>' +
+  '<ellipse cx="50" cy="56" rx="36" ry="38" fill="#F4B942" stroke="#2A2622" stroke-width="4"/>' +
+  '<ellipse cx="50" cy="69" rx="23" ry="23" fill="#FFF0CC" stroke="#2A2622" stroke-width="3"/>' +
+  '<ellipse class="wing l" cx="16" cy="56" rx="9" ry="20" fill="#E09A2B" stroke="#2A2622" stroke-width="3.5"/>' +
+  '<ellipse class="wing r" cx="84" cy="56" rx="9" ry="20" fill="#E09A2B" stroke="#2A2622" stroke-width="3.5"/>' +
+  '<g class="eye l"><circle cx="37" cy="45" r="14" fill="#fff" stroke="#2A2622" stroke-width="3.5"/>' +
+    '<circle class="pupil" cx="37" cy="45" r="6.5" fill="#2A2622"/><circle cx="39.6" cy="42.4" r="2.3" fill="#fff"/></g>' +
+  '<g class="eye r"><circle cx="63" cy="45" r="14" fill="#fff" stroke="#2A2622" stroke-width="3.5"/>' +
+    '<circle class="pupil" cx="63" cy="45" r="6.5" fill="#2A2622"/><circle cx="65.6" cy="42.4" r="2.3" fill="#fff"/></g>' +
+  '<path class="brow" d="M25 29 L46 34" stroke="#2A2622" stroke-width="4" stroke-linecap="round" fill="none"/>' +
+  '<path class="brow" d="M75 29 L54 34" stroke="#2A2622" stroke-width="4" stroke-linecap="round" fill="none"/>' +
+  '<path d="M50 54 L43 62 L57 62 Z" fill="#E4572E" stroke="#2A2622" stroke-width="3" stroke-linejoin="round"/>' +
+  '<path d="M38 91 l0 6 M33 97 h10 M62 91 l0 6 M57 97 h10" stroke="#E4572E" stroke-width="4" stroke-linecap="round" fill="none"/>' +
+  '</svg>';
+let pipTimer = null;
+function pipFace(state, ms){
+  const ws = document.querySelectorAll(".pipwrap");
+  ws.forEach(w => w.classList.remove("happy","oops","party"));
+  if(!state) return;
+  ws.forEach(w => w.classList.add(state));
+  clearTimeout(pipTimer);
+  pipTimer = setTimeout(() => document.querySelectorAll(".pipwrap")
+    .forEach(w => w.classList.remove("happy","oops","party")), ms || 900);
+}
+
+/* =====================================================================
+   SOUND — soft sine tones, never a harsh beep. She may be on headphones.
+   ===================================================================== */
+let AC = null;
+function ac(){
+  if(!AC){ try{ AC = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ return null; } }
+  if(AC.state === "suspended") AC.resume();
+  return AC;
+}
+function tone(freq, start, dur, type, peak){
+  if(!S.sfx) return;
+  const c = ac(); if(!c) return;
+  const o = c.createOscillator(), g = c.createGain();
+  o.type = type || "sine"; o.frequency.value = freq;
+  const t = c.currentTime + start;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(peak || 0.10, t + 0.025);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(t); o.stop(t + dur + 0.05);
+}
+const sfxGood    = () => [523.25,659.25,783.99].forEach((f,i) => tone(f, i*0.085, 0.34, "sine", 0.09));
+const sfxOops    = () => { tone(392, 0, 0.20, "sine", 0.055); tone(329.63, 0.11, 0.30, "sine", 0.05); };
+const sfxPop     = () => tone(880, 0, 0.12, "triangle", 0.07);
+const sfxSticker = () => [659.25,783.99,1046.5,1318.5].forEach((f,i) => tone(f, i*0.075, 0.5, "triangle", 0.08));
+const sfxWin     = () => [523.25,659.25,783.99,1046.5].forEach((f,i) => tone(f, i*0.12, 0.55, "sine", 0.10));
+
+/* =====================================================================
+   STICKERS — five stars buys one. Something that visibly accumulates
+   is worth more to a five-year-old than any number.
+   ===================================================================== */
+const STICKER_SET = ["🌟","🦄","🐣","🌈","🍩","🐙","🚀","🦖","🌻","🐝",
+                     "🍓","🐬","🎈","🦋","🧁","🐼","🎨","🦉","🍀","🐧"];
+const STICKER_EVERY = 5;
+function checkSticker(){
+  const earned = Math.floor(S.stars / STICKER_EVERY);
+  let got = null;
+  while(S.stickers.length < earned){
+    got = STICKER_SET[S.stickers.length % STICKER_SET.length];
+    S.stickers.push(got);
+  }
+  if(got){
+    save(); renderStickers(); sfxSticker(); pipFace("party", 2000);
+    cheer(got + " New sticker!", "Five more stars. It is in your sticker book.", 2400);
+    say("You earned a sticker! Well done" + (kidName() ? ", " + kidName() : "") + ".");
+  }
+  return got;
+}
+function renderStickers(){
+  const el = document.getElementById("stickerBook"); if(!el) return;
+  const prog = S.stars % STICKER_EVERY;
+  const left = STICKER_EVERY - prog;
+  el.innerHTML =
+    (S.stickers.length
+      ? S.stickers.map((e,i) => '<span class="sticker" style="--tilt:' + (((i*37) % 13) - 6) + 'deg">' + e + '</span>').join("")
+      : '<span class="empty">Play a game to win your first sticker!</span>') +
+    '<span class="next">' + left + (left === 1 ? ' more star' : ' more stars') +
+      '<span class="meter"><i style="width:' + (prog / STICKER_EVERY * 100) + '%"></i></span></span>';
+}
+
+/* =====================================================================
+   A star that flies to the counter, so earning one is an event
+   ===================================================================== */
+let lastPt = {x: innerWidth/2, y: innerHeight/2};
+addEventListener("pointerdown", e => { lastPt = {x: e.clientX, y: e.clientY}; }, true);
+function bumpStars(){
+  const t = document.querySelector(".stars"); if(!t) return;
+  t.classList.add("bump"); setTimeout(() => t.classList.remove("bump"), 430);
+}
+function flyStar(){
+  const target = document.querySelector(".stars");
+  if(reduceMotion || !target){ bumpStars(); return; }
+  const r = target.getBoundingClientRect();
+  const el = document.createElement("div");
+  el.className = "flystar"; el.textContent = "⭐";
+  el.style.left = (lastPt.x - 17) + "px";
+  el.style.top  = (lastPt.y - 17) + "px";
+  document.body.appendChild(el);
+  requestAnimationFrame(() => {
+    el.style.transform = "translate(" + (r.left + r.width/2 - lastPt.x) + "px," +
+                                        (r.top + r.height/2 - lastPt.y) + "px) scale(.4)";
+    el.style.opacity = "0.25";
+  });
+  setTimeout(() => { el.remove(); bumpStars(); }, 720);
+}
+
+/* =====================================================================
+   PIP'S WELCOME
+   ===================================================================== */
+function pipGreeting(){
+  const n = kidName();
+  const hi = n ? ["Hello, " + n + "!", "Hi " + n + "!", "There you are, " + n + "!"] : ["Hello!", "Hi there!", "Oh, hello!"];
+  return pick(hi) + " " + pick([
+    "I'm Pip. Shall we play with some letters together?",
+    "I'm so glad you came back. Which game shall we play?",
+    "I'm Pip the owl. Pick a game and I'll help you.",
+    "Ready to find some letters with me?",
+    "I've been waiting for you. Let's learn some sounds!"
+  ]);
+}
+function pipHello(speakIt){
+  const el = document.getElementById("pipSays");
+  if(!el) return;
+  const line = pipGreeting();
+  el.textContent = line;
+  if(speakIt) say(line, {now:true});
+}
+
 const sheetHost = document.getElementById("sheetHost");
 function closeSheet(){ sheetHost.innerHTML = ""; }
 function openSheet(html, wire){
@@ -1362,8 +1647,12 @@ function seg(name, options, value){
 document.getElementById("settingsBtn").addEventListener("click", () => {
   openSheet(
     '<h2>Settings</h2><p class="sub">Set it up the way her class does it.</p>' +
+    '<div class="row"><span class="lab">Her name</span>' +
+      '<input class="pill" id="kidName" type="text" maxlength="14" placeholder="(optional)" ' +
+      'value="' + (S.kidName || "").replace(/"/g, "&quot;") + '"></div>' +
     '<div class="row"><span class="lab">Letters look like</span>' + seg("caseMode", [["upper","A B C"],["lower","a b c"],["both","A a B b"]], S.caseMode) + '</div>' +
     '<div class="row"><span class="lab">Voice</span>' + seg("speech", [[ "on","On"],["off","Off"]], S.speech ? "on" : "off") + '</div>' +
+    '<div class="row"><span class="lab">Fun sounds</span>' + seg("sfx", [["on","On"],["off","Off"]], S.sfx ? "on" : "off") + '</div>' +
     '<div class="row"><span class="lab">Which voice</span><select class="pill" id="voiceSel"></select>' +
       '<button class="pill" id="tryVoice">Hear it</button></div>' +
     '<div id="voiceNote"></div>' +
@@ -1375,6 +1664,7 @@ document.getElementById("settingsBtn").addEventListener("click", () => {
         const k = b.dataset.seg, v = b.dataset.val;
         if(k === "caseMode") S.caseMode = v;
         if(k === "speech")   S.speech = (v === "on");
+        if(k === "sfx")      { S.sfx = (v === "on"); if(S.sfx) sfxGood(); }
         if(k === "rate")     S.rate = parseFloat(v);
         save();
         host.querySelectorAll('[data-seg="' + k + '"]').forEach(o => o.setAttribute("aria-pressed", o === b));
@@ -1382,6 +1672,11 @@ document.getElementById("settingsBtn").addEventListener("click", () => {
       }));
       /* Voice quality is decided almost entirely by which voice is
          installed, and that varies by machine, so let them hear and choose. */
+      const nameIn = host.querySelector("#kidName");
+      nameIn.addEventListener("input", () => { S.kidName = nameIn.value; save(); });
+      nameIn.addEventListener("change", () => {
+        if(kidName()) say("Hello, " + kidName() + "! It's lovely to meet you.", {now:true});
+      });
       const sel = host.querySelector("#voiceSel");
       const note = host.querySelector("#voiceNote");
       function populate(){
@@ -1413,7 +1708,8 @@ document.getElementById("settingsBtn").addEventListener("click", () => {
       host.querySelector("#doneBtn").addEventListener("click", () => { closeSheet(); if(!current) renderHome(); });
       host.querySelector("#resetBtn").addEventListener("click", e => {
         if(e.target.dataset.sure){
-          S = Object.assign({}, defaults, {caseMode:S.caseMode, speech:S.speech, rate:S.rate});
+          S = Object.assign({}, defaults, {caseMode:S.caseMode, speech:S.speech, rate:S.rate,
+                                           voiceName:S.voiceName, sfx:S.sfx, kidName:S.kidName, stickers:[]});
           save(); closeSheet(); renderHome();
         } else { e.target.dataset.sure = "1"; e.target.textContent = "Really clear? Tap again"; }
       });
@@ -1449,8 +1745,14 @@ addEventListener("pointerdown", () => {
   if(warmed) return;
   warmed = true;
   if("speechSynthesis" in window && !voiceReady) pickVoice();
-  say(pick(["Hi! Let's play with letters.","Hello! Ready to play with letters?","Hi there! Let's find some letters."]), {now:true});
+  ac();                       /* the first tap is also the permission for sound */
+  pipFace("happy", 900);
+  pipHello(true);
 }, {once:false});
+
+document.getElementById("pipAgain").addEventListener("click", () => { pipFace("happy", 800); pipHello(true); });
+document.getElementById("pipSays").addEventListener("click", () => { pipFace("happy", 800); pipHello(true); });
+document.getElementById("pipSays").style.cursor = "pointer";
 
 renderHome();
 </script>

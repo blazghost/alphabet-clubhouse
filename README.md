@@ -24,9 +24,18 @@ Open `index.html` in any browser, or use the published link.
   preview, because what is installed differs on every machine.
 - **Every drag also works as two taps.** Tap the letter, then tap where it goes,
   so a child who cannot yet hold a drag is never locked out of the phonics.
-- **No losing.** A wrong answer never costs a star or ends a round.
+- **No losing.** A wrong answer never costs a star or ends a round, and the
+  reply is always gentle: "That's okay. Let's try again together."
+- **Pip does the talking.** Giving the voice a face is what makes it read as
+  someone caring rather than a machine reading words aloud. He reacts to every
+  answer, and tapping him repeats the question.
+- **Her name.** Optional, set in Settings, and woven into about half the praise
+  so it is her being congratulated, not a generic player.
 
 ## The ten activities
+
+Stars fly to the counter as she earns them, five stars wins a sticker for the
+sticker book, and the sound effects are soft sine tones rather than beeps.
 
 Letters & sounds: Alphabet Board, Find the Letter (letter name -> letter),
 Letter Sounds (phoneme -> letter), Beginning Sounds (picture -> first letter),
