@@ -89,3 +89,7 @@ has *none*, so the app is silent until speech-dispatcher is present:
 
 Then restart the browser and choose the voice in Settings. RHVoice sounds far
 more human than espeak-ng, which is the one that sounds like a robot.
+
+## License
+
+MIT
