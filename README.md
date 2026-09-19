@@ -13,8 +13,16 @@ Open `index.html` in any browser, or use the published link.
 - **Andika for every letterform.** SIL's literacy typeface: single-story `a` and
   `g`, distinct `l`/`I`/`1` - the manuscript print taught in kindergarten. A
   double-story `a` actively confuses a new reader.
-- **Sounds, not just names.** The voice gives the phoneme. Continuants (f, l, m,
-  n, r, s, v, z) are held; stops get the shortest possible schwa.
+- **Sounds, not just names, and the right sounds.** Letter sounds are not left
+  to the browser's voice: given "sss" it says "ess ess ess", given "ih" it says
+  "eye", given "eh" it says "ay", and no spelling makes it say the short *a* in
+  *apple*. So each of the 26 phonemes is a short recorded clip embedded in the
+  page, rendered from IPA with a Piper neural voice by
+  `tools/build-phonemes.py`, checked by measurement (vowel formants, r-colouring,
+  fricative noise) and played in place wherever the voice would have said the
+  sound. Continuants (f, l, m, n, r, s, v, z) are held; stops get the shortest
+  possible schwa. The sounds are General American: a /æ/, e /ɛ/, i /ɪ/,
+  o /ɑ/, u /ʌ/, x /ks/, q /kw/.
 - **Phrases are spoken as whole sentences.** A synthesiser carries its
   intonation across an utterance, so "B says buh, like ball!" is sent as one
   line. Chopping it into fragments restarts the prosody flat on each piece with
@@ -75,7 +83,8 @@ Trace a Letter (press-and-hold drag along correct letter formation strokes).
 
 ## Notes
 
-Single file, no build step, no dependencies beyond Google Fonts. Progress is kept
+Single file, no build step, no dependencies beyond Google Fonts. The letter
+sounds are embedded in the page (about 100 KB), so they play offline too. Progress is kept
 in `localStorage`, so each device keeps its own stars. Settings cover letter case
 (capitals / lower case / mixed), voice on-off and voice speed.
 
