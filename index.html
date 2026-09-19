@@ -591,12 +591,14 @@ const TILECOLORS = ["t-poppy","t-sky","t-grape","t-grass","t-sun"];
    STATE
    ===================================================================== */
 const KEY = "alphabet-clubhouse-v1";
-const defaults = {stars:0, seen:{}, best:{}, caseMode:"upper", speech:true, rate:0.92,
+const defaults = {stars:0, seen:{}, best:{}, caseMode:"upper", speech:true, rate:0.82,
                   voiceName:null, sfx:true, kidName:"", stickers:[], style:"teacher", lessons:{}};
 let S = Object.assign({}, defaults);
 try{ const raw = localStorage.getItem(KEY); if(raw) S = Object.assign({}, defaults, JSON.parse(raw)); }catch(e){}
-/* Older saves used slower rates that made the voice drone. */
-const RATE_MIGRATE = {"0.68":0.78, "0.82":0.92, "0.98":1.05};
+/* Map every speed a save may hold onto the current three. The middle
+   setting was eased from 0.92 to 0.82: at 0.92 a new reader cannot keep
+   up, and taps started landing on top of speech that had not finished. */
+const RATE_MIGRATE = {"0.68":0.7, "0.78":0.7, "0.92":0.82, "0.98":0.95, "1.05":0.95};
 if(RATE_MIGRATE[String(S.rate)]) S.rate = RATE_MIGRATE[String(S.rate)];
 /* copy, never share the array in defaults */
 S.stickers = (S.stickers || []).slice();
@@ -666,40 +668,59 @@ let speakQueue = Promise.resolve();
    than spoken, so "B says ⟦b⟧, like ball!" is voice, clip, voice (⟦A⟧,
    capital, is the name of A; see letterName). A
    comma between two sounds is a breath, not something to say. */
-let speakGen = 0, clipEl = null;
-const clipCache = {};
-function stopClip(){ if(clipEl){ try{ clipEl.pause(); }catch(e){} clipEl = null; } }
+let speakGen = 0, clip = null;
+const CLIP_VOL = 0.92;
+/* A tap cuts the sound off, but never dead: a hard stop mid-waveform is
+   an audible click. Fade over 70 ms instead. Each play gets its own
+   element, so a clip fading out never fights the one starting. */
+function stopClip(){
+  if(!clip) return;
+  const {a, finish} = clip; clip = null; finish(true);
+  const t0 = performance.now(), v0 = a.volume;
+  (function step(){
+    const k = 1 - (performance.now() - t0) / 70;
+    if(k <= 0){ try{ a.pause(); }catch(e){} return; }
+    a.volume = v0 * k; requestAnimationFrame(step);
+  })();
+}
 function playClip(l){
   return new Promise(res => {
     const src = (typeof PHONEMES !== "undefined") && PHONEMES[l];
     if(!src) return res(false);
-    const a = clipCache[l] || (clipCache[l] = new Audio("data:audio/mpeg;base64," + src));
-    try{ a.pause(); a.currentTime = 0; }catch(e){}
-    a.volume = 0.92;
+    const a = new Audio("data:audio/mpeg;base64," + src);
+    a.volume = CLIP_VOL;
     let done = false;
     const finish = ok => { if(done) return; done = true; clearTimeout(guard);
-                           a.onended = a.onerror = null; if(clipEl === a) clipEl = null; res(ok); };
+                           a.onended = a.onerror = null; if(clip && clip.a === a) clip = null; res(ok); };
     const guard = setTimeout(() => finish(true), 2500);
     a.onended = () => finish(true); a.onerror = () => finish(false);
-    clipEl = a;
+    clip = {a, finish};
     const p = a.play();
     if(p && p.catch) p.catch(() => finish(false));
   });
 }
+function rest(ms){ return new Promise(r => setTimeout(r, ms)); }
 async function speakNow(text, opts){
   if(!text || text.indexOf("⟦") < 0) return speakLine(text, opts);
   const gen = speakGen;
+  /* Room either side of a sound, so "B says ⟦b⟧, like ball" is not run
+     together: the sound is the point of the sentence and needs to land. */
+  const k = teacherMode() ? 1.25 : 1;
   const parts = text.split(/⟦([a-zA-Z])⟧/);
   for(let i = 0; i < parts.length; i++){
     if(gen !== speakGen) return;
     const p = parts[i];
     if(i % 2){
       if(!S.speech) continue;
+      if(i > 1 && /[A-Za-z0-9]/.test(parts[i - 1])) await rest(150 * k);
+      if(gen !== speakGen) return;
       if(!(await playClip(p))) await speakLine(BY[p] ? BY[p].tts : p + ",", opts);
     } else if(/[A-Za-z0-9]/.test(p)){
-      await speakLine(p.replace(/^[\s,]+/, ""), opts);
+      if(i > 0) await rest(200 * k);
+      if(gen !== speakGen) return;
+      await speakLine(p.replace(/^[\s,.!?]+/, ""), opts);
     } else if(/[,.!?]/.test(p) && i > 0 && i < parts.length - 1){
-      await new Promise(r => setTimeout(r, 260));
+      await rest(380 * k);
     }
   }
 }
@@ -733,21 +754,31 @@ function speakLine(text, opts){
     speechSynthesis.speak(u);
   });
 }
+/* Everything queued remembers the generation it was queued in. A tap
+   bumps the generation, so whatever was still waiting from before is
+   skipped rather than playing over the new line. Resetting speakQueue
+   alone is not enough: the old chain keeps running on its own. */
+function enqueue(fn){
+  const g = speakGen;
+  speakQueue = speakQueue.then(() => g === speakGen ? fn() : undefined);
+  return speakQueue;
+}
+/* Stop everything now: the voice, a clip mid-sound, the Your-turn wait. */
+function hush(){
+  speakGen++; stopClip(); showTurn(false);
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+  speakQueue = Promise.resolve();
+}
 /* say("...") queues; say("...", {now:true}) interrupts (a child taps fast). */
 function say(text, opts){
   opts = opts || {};
-  if(opts.now){
-    speakGen++; stopClip();
-    if("speechSynthesis" in window) speechSynthesis.cancel();
-    speakQueue = Promise.resolve();
-  }
-  speakQueue = speakQueue.then(() => speakNow(text, opts));
-  return speakQueue;
+  if(opts.now) hush();
+  return enqueue(() => speakNow(text, opts));
 }
-function pause(ms){ speakQueue = speakQueue.then(() => new Promise(r => setTimeout(r, ms))); return speakQueue; }
+function pause(ms){ return enqueue(() => new Promise(r => setTimeout(r, ms))); }
 /* Queue a DOM change in speech order, so a highlight lands exactly with
    the sound it belongs to rather than racing it. */
-function act(fn){ speakQueue = speakQueue.then(() => { try{ fn(); }catch(e){} }); return speakQueue; }
+function act(fn){ return enqueue(() => { try{ fn(); }catch(e){} }); }
 /* A is the one letter whose name the voice cannot be trusted with: at
    the start of a phrase ("A says…", "A is for apple") it is read as the
    article "uh", and spelled "Ay" it is read as "aye", which sounds like
@@ -882,18 +913,14 @@ function openActivity(id){
   playArea.innerHTML = ""; dotsEl.innerHTML = ""; dotsEl.className = "progress";
   const sb = document.getElementById("sayBtn");
   if(sb && !sb.querySelector(".pipwrap")) sb.innerHTML = '<span class="pipwrap">' + PIP_SVG + '</span>';
-  speakGen++; stopClip();
-  if("speechSynthesis" in window) speechSynthesis.cancel();
-  speakQueue = Promise.resolve();
+  hush();
   a.start();
 }
 function goHome(){
   showTurn(false);
   cleanups.forEach(fn => { try{ fn(); }catch(e){} });
   cleanups = []; current = null;
-  speakGen++; stopClip();
-  if("speechSynthesis" in window) speechSynthesis.cancel();
-  speakQueue = Promise.resolve();
+  hush();
   playArea.innerHTML = "";
   document.getElementById("play").classList.add("hidden");
   document.getElementById("home").classList.remove("hidden");
@@ -1280,8 +1307,8 @@ ACTIVITIES.build = {
       setDots(got, 5);
       confetti();
       say("Listen.", {now:true});
-      word.w.split("").forEach(l => { say(BY[l].sound, {rate:0.55}); pause(120); });
-      pause(200);
+      word.w.split("").forEach(l => { say(BY[l].sound, {rate:0.55}); pause(200); });
+      pause(450);
       say(word.w + "! " + praise(), {rate:0.8});
       setTimeout(next, 3600);
     }
@@ -1809,10 +1836,11 @@ function showTurn(on, ms){
 function yourTurn(ms){
   if(!teacherMode()) return;
   ms = ms || 2600;
-  speakQueue = speakQueue.then(() => new Promise(res => {
+  enqueue(() => new Promise(res => {
+    const g = speakGen;
     showTurn(true, ms);
     pipFace("listening", ms + 300);
-    setTimeout(() => { showTurn(false); res(); }, ms);
+    setTimeout(() => { if(g === speakGen) showTurn(false); res(); }, ms);
   }));
 }
 const HEARD = ["Good job saying it!","I heard you! Well done.","Yay! You said it.",
@@ -1911,7 +1939,7 @@ function blendWord(word, row, swoop, done){
   word.split("").forEach((l, i) => {
     act(() => { tiles.forEach(t => t.classList.remove("lit")); if(tiles[i]) tiles[i].classList.add("lit"); });
     say((BY[l] ? BY[l].sound : l), {rate: 0.55});
-    pause(120);
+    pause(200);
   });
   act(() => {
     tiles.forEach(t => { t.classList.remove("lit"); t.classList.add("all"); });
@@ -2078,8 +2106,8 @@ ACTIVITIES.lesson = {
           b.classList.add("lit"); b.classList.add("read");
           if(clean.length > 1 && clean.length <= 4 && clean.split("").every(c => BY[c])){
             say("", {now:true});
-            clean.split("").forEach(c => { say(BY[c].sound, {rate: 0.55}); pause(110); });
-            pause(180); say(clean + "!", {rate: 0.8});
+            clean.split("").forEach(c => { say(BY[c].sound, {rate: 0.55}); pause(200); });
+            pause(450); say(clean + "!", {rate: 0.8});
           } else {
             say(clean, {now:true});
           }
@@ -2215,7 +2243,7 @@ document.getElementById("settingsBtn").addEventListener("click", () => {
     '<div class="row"><span class="lab">Which voice</span><select class="pill" id="voiceSel"></select>' +
       '<button class="pill" id="tryVoice">Hear it</button></div>' +
     '<div id="voiceNote"></div>' +
-    '<div class="row"><span class="lab">Voice speed</span>' + seg("rate", [["0.78","Slow"],["0.92","Just right"],["1.05","Quick"]], String(S.rate)) + '</div>' +
+    '<div class="row"><span class="lab">Voice speed</span>' + seg("rate", [["0.7","Slow"],["0.82","Just right"],["0.95","Quick"]], String(S.rate)) + '</div>' +
     '<div class="row"><span class="lab">Start over</span><button class="pill" id="resetBtn">Clear stars</button></div>' +
     '<div class="row" style="justify-content:flex-end"><button class="pill" id="doneBtn">Done</button></div>',
     host => {
