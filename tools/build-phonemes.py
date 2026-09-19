@@ -32,6 +32,7 @@ V = {"æ": (940, 1800), "ɛ": (700, 1850), "ɪ": (430, 2250), "ɑ": (880, 1250),
 #   mid    - voiced fricative between vowels (it devoices at the end of a
 #            phrase), keep the energy dip between the two vowels
 #   stop   - consonant + the shortest schwa
+#   name   - a letter NAME the browser voice misreads (A: "uh" or "eye")
 PH = {
  "a": ("ˈæ", 1.7, "vowel"), "e": ("ˈɛ", 1.7, "vowel"), "i": ("ˈɪ", 1.9, "vowel"),
  "o": ("ˈɑ", 1.6, "vowel"), "u": ("ˈʌ", 1.6, "vowel"),
@@ -43,6 +44,7 @@ PH = {
  "g": ("ɡə", 1.0, "stop"), "h": ("hə", 1.0, "stop"), "j": ("dʒə", 1.0, "stop"),
  "k": ("kə", 1.0, "stop"), "p": ("pə", 1.0, "stop"), "q": ("kwə", 1.0, "stop"),
  "t": ("tə", 1.0, "stop"), "w": ("wə", 1.0, "stop"), "y": ("jə", 1.0, "stop"),
+ "A": ("ˈeɪ.", 1.3, "name"),
 }
 
 def synth(ipa, ls, ns=0.4):
@@ -112,7 +114,7 @@ for L, (ipa, ls, kind) in PH.items():
             elif kind == "r":
                 sc = -F[2] if F else -9e9
             else:
-                sc = -abs(len(y)/SR - 0.45) if kind == "hold" else -abs(len(y)/SR - 0.25)
+                sc = -abs(len(y)/SR - {"hold": 0.45, "name": 0.5}.get(kind, 0.25))
             inf = (f"F1 {F[0]:.0f} F2 {F[1]:.0f} F3 {F[2]:.0f}" if F else "unvoiced") + f"  {len(y)/SR:.2f}s"
         if sc > bscore: best, bscore, info = y, sc, inf
     # a held continuant should last long enough to hear and copy
@@ -138,7 +140,7 @@ def level_gain(path, rms_db=-16.0, peak_db=-1.0):
 if PAGE:
     import subprocess, base64, re
     data = {}
-    for L in "abcdefghijklmnopqrstuvwxyz":
+    for L in "abcdefghijklmnopqrstuvwxyzA":
         out = f"{OUT}/{L}.mp3"; IN = f"{OUT}/{L}.wav"
         subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", f"{OUT}/{L}.wav",
                         "-af", f"volume={level_gain(IN)}dB", "-ac", "1", "-ar", "22050",

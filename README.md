@@ -22,7 +22,10 @@ Open `index.html` in any browser, or use the published link.
   fricative noise) and played in place wherever the voice would have said the
   sound. Continuants (f, l, m, n, r, s, v, z) are held; stops get the shortest
   possible schwa. The sounds are General American: a /æ/, e /ɛ/, i /ɪ/,
-  o /ɑ/, u /ʌ/, x /ks/, q /kw/.
+  o /ɑ/, u /ʌ/, x /ks/, q /kw/ — the same sounds Hooked on Phonics teaches
+  (short vowels, hard c and g, x as in fox, y as in yarn). The *name* of A is
+  a clip as well: at the start of a phrase the voice reads "A" as "uh", and
+  spelled "Ay" it reads it as "eye".
 - **Phrases are spoken as whole sentences.** A synthesiser carries its
   intonation across an utterance, so "B says buh, like ball!" is sent as one
   line. Chopping it into fragments restarts the prosody flat on each piece with
