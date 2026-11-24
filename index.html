@@ -2318,10 +2318,10 @@ document.getElementById("settingsBtn").addEventListener("click", () => {
       if(!rankedVoices().length) setTimeout(populate, 700); /* voices often arrive late */
       sel.addEventListener("change", () => {
         S.voiceName = sel.value; save(); chooseVoice();
-        say("Bee says buh, like ball!", {now:true});
+        say("B says ⟦b⟧, like ball!", {now:true});
       });
       host.querySelector("#tryVoice").addEventListener("click", () =>
-        say("Hello! Bee says buh, like ball. Can you find the letter Ess?", {now:true}));
+        say("Hello! B says ⟦b⟧, like ball. Can you find the letter S?", {now:true}));
       host.querySelector("#doneBtn").addEventListener("click", () => { closeSheet(); if(!current) renderHome(); });
       host.querySelector("#resetBtn").addEventListener("click", e => {
         if(e.target.dataset.sure){
@@ -2344,7 +2344,7 @@ document.getElementById("grownupsBtn").addEventListener("click", () => {
     '<ul class="tips">' +
       '<li><b>Trackpad order.</b> Bubble Pop first (just moving the pointer), then Knock Knock, then the two dragging games. Trace a Letter is the hardest &mdash; it needs a click held down the whole way.</li>' +
       '<li><b>Every drag also works as two taps.</b> Tap the letter, then tap where it goes. Let her use that until the drag itself clicks.</li>' +
-      '<li><b>Sounds, not names.</b> The voice says the <i>sound</i> a letter makes (&ldquo;mmm&rdquo;, not &ldquo;em&rdquo;) because that is what blends into words. Stretchy letters are held; b, d, p and t get the shortest possible &ldquo;uh&rdquo;.</li>' +
+      '<li><b>Sounds, not names.</b> The voice says the <i>sound</i> a letter makes (&ldquo;mmm&rdquo;, not &ldquo;em&rdquo;) because that is what blends into words. Stretchy letters (m, s, f&hellip;) are held. p, t, k and h are whispered, with no voice, and b, d and g are kept as short as possible &mdash; never &ldquo;puh&rdquo; or &ldquo;buh&rdquo;, because the extra &ldquo;uh&rdquo; is what makes blending hard (&ldquo;buh-a-tuh&rdquo; is not &ldquo;bat&rdquo;). When she tries a sound, Pip says how the mouth makes it.</li>' +
       '<li><b>Saying it out loud is the point.</b> In Teacher style Pip models a sound three times, then stops and waits while a <i>Your turn!</i> badge shows on screen. That pause is deliberate — reading starts with making the sounds with her own mouth, not just recognising them. Switch to Simple in Settings if she would rather move quickly.</li>' +
       '<li><b>If the voice sounds robotic,</b> open Settings and try the other voices in the list — the ones marked <i>Natural</i>, <i>Neural</i> or <i>Online</i> are the human-sounding ones. On a Chromebook, more can be added under Settings &rarr; Accessibility &rarr; Text-to-speech.</li>' +
       '<li><b>Case.</b> Kindergarten usually starts in capitals. Switch to <i>A a B b</i> in Settings once she is matching both.</li>' +
