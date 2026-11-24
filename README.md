@@ -20,8 +20,17 @@ Open `index.html` in any browser, or use the published link.
   page, rendered from IPA with a Piper neural voice by
   `tools/build-phonemes.py`, checked by measurement (vowel formants, r-colouring,
   fricative noise) and played in place wherever the voice would have said the
-  sound. Continuants (f, l, m, n, r, s, v, z) are held; stops get the shortest
-  possible schwa. The sounds are General American: a /æ/, e /ɛ/, i /ɪ/,
+  sound. They follow Kilpatrick's *Guide to Pronouncing Phonemes in Isolation*
+  (2021): continuants (f, l, m, n, r, s, v, z) are held with no "uh"; p, t, k,
+  c and h are **whispered** — burst plus a whispered vowel onset, zero voicing,
+  never "puh"; b, d, g, j keep under 50 ms of voicing; w and y keep the glide
+  and drop the vowel. `tools/check-phonemes.py` measures the embedded clips
+  (voiced time, r-colouring) and fails if any letter breaks that — the
+  previous clips had 140–210 ms of "uh" on every stop. Keywords start with the pure sound (tiger, not tree:
+  *tr* is said "chr"; elephant, not egg: it drifts to "ayg"). In teacher mode
+  the *Your turn!* invite also says how the mouth makes the sound ("Lips
+  together, then a little puff. No voice!"), since seeing the articulation
+  helps sounds stick (Novelli, Ardoin & Rodgers 2024). The sounds are General American: a /æ/, e /ɛ/, i /ɪ/,
   o /ɑ/, u /ʌ/, x /ks/, q /kw/ — the same sounds Hooked on Phonics teaches
   (short vowels, hard c and g, x as in fox, y as in yarn). The *name* of A is
   a clip as well: at the start of a phrase the voice reads "A" as "uh", and
@@ -90,6 +99,13 @@ Single file, no build step, no dependencies beyond Google Fonts. The letter
 sounds are embedded in the page (about 100 KB), so they play offline too. Progress is kept
 in `localStorage`, so each device keeps its own stars. Settings cover letter case
 (capitals / lower case / mixed), voice on-off and voice speed.
+
+## Checks
+
+    python tools/check-phonemes.py   # every letter sound against the rules above
+    node tools/timing-test.mjs       # headless Chromium, fake voice: rounds advance
+                                     # when speech ends, never cut it off, never
+                                     # fire after leaving an activity
 
 ## Getting a human-sounding voice
 

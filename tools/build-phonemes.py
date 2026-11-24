@@ -31,19 +31,26 @@ V = {"æ": (940, 1800), "ɛ": (700, 1850), "ɪ": (430, 2250), "ɑ": (880, 1250),
 #   cut    - vowel + consonant, keep only the consonant
 #   mid    - voiced fricative between vowels (it devoices at the end of a
 #            phrase), keep the energy dip between the two vowels
-#   stop   - consonant + the shortest schwa
+#   puff   - voiceless stop: burst + aspiration only, zero voicing
+#   clip   - voiced stop / glide: keep VOICED_MS of voicing, then fade
 #   name   - a letter NAME the browser voice misreads (A: "uh" or "eye")
 PH = {
  "a": ("ˈæ", 1.7, "vowel"), "e": ("ˈɛ", 1.7, "vowel"), "i": ("ˈɪ", 1.9, "vowel"),
  "o": ("ˈɑ", 1.6, "vowel"), "u": ("ˈʌ", 1.6, "vowel"),
  "m": ("m.", 2.6, "hold"), "n": ("n.", 2.8, "hold"), "l": ("l.", 2.8, "hold"),
- "r": ("ɹɚ.", 1.6, "r"),
  "s": ("ʌs.", 2.6, "cut"), "f": ("ʌf.", 4.0, "cut"), "v": ("ʌvʌ", 6.0, "mid"),
  "z": ("ʌzʌ", 3.2, "mid"), "x": ("ɛks.", 1.6, "cut"),
- "b": ("bə", 1.0, "stop"), "c": ("kə", 1.0, "stop"), "d": ("də", 1.0, "stop"),
- "g": ("ɡə", 1.0, "stop"), "h": ("hə", 1.0, "stop"), "j": ("dʒə", 1.0, "stop"),
- "k": ("kə", 1.0, "stop"), "p": ("pə", 1.0, "stop"), "q": ("kwə", 1.0, "stop"),
- "t": ("tə", 1.0, "stop"), "w": ("wə", 1.0, "stop"), "y": ("jə", 1.0, "stop"),
+ "r": ("ɹɚ.", 2.4, "r"),
+ # Stops follow Kilpatrick (2021), "Pronouncing phonemes in isolation":
+ # p t k h are whispered, never "puh"; b d g j get the least voicing
+ # that still carries the sound. Each is rendered before a stressed vowel
+ # (longest aspiration) and cut where that vowel's voicing starts.
+ "p": ("ˈpɑ", 1.3, "puff"), "t": ("ˈtɑ", 1.3, "puff"), "k": ("ˈkɑ", 1.3, "puff"),
+ "c": ("ˈkɑ", 1.3, "puff"), "h": ("ˈhɑ", 1.6, "puff"),
+ "b": ("ˈbʌ", 1.0, "clip"), "d": ("ˈdʌ", 1.0, "clip"), "g": ("ˈɡʌ", 1.0, "clip"),
+ "j": ("ˈdʒʌ", 1.0, "clip"), "q": ("ˈkwʌ", 1.4, "clip"),
+ # glides: the glide is the sound, so keep it and drop the vowel after
+ "w": ("ˈwʌ", 1.6, "clip"), "y": ("ˈjʌ", 1.6, "clip"),
  "A": ("ˈeɪ.", 1.3, "name"),
 }
 
@@ -90,12 +97,62 @@ def cut_mid(y):
     while b < p2 and rms[b] < thr: b += 1
     return y[(a + 2) * hop:(b - 2) * hop]
 
-def fricative_score(y):
-    """Length of the noisy stretch (s, f, z, x) or the whole cut (v)."""
-    return len(y) / SR
+# ms of voicing kept after onset: enough to hear b vs p, never an "uh"
+VOICED_MS = {"b": 45, "d": 45, "g": 50, "j": 45, "q": 70, "w": 90, "y": 80}
+
+def voice_onset(y):
+    """Sample where the vowel's voicing starts: first voiced 5 ms frame
+    at >=20% of the peak loudness (so a closure murmur does not count)."""
+    snd = parselmouth.Sound(y, sampling_frequency=SR)
+    f0 = snd.to_pitch(time_step=0.005, pitch_floor=120, pitch_ceiling=500).selected_array["frequency"]
+    rms = librosa.feature.rms(y=y, frame_length=256, hop_length=int(0.005 * SR))[0]
+    for i, f in enumerate(f0):
+        j = min(i + 1, len(rms) - 1)
+        if f > 0 and rms[j] >= 0.2 * rms.max(): return int((i + 0.5) * 0.005 * SR)
+    return None
+
+def vowel_onset(y):
+    """Sample where the vowel itself starts: loud (>=35% of peak) and mostly
+    below 1 kHz. A closure murmur is too quiet; a burst, aspiration or the
+    friction of j is too high-pitched; so all of those stay before it."""
+    hop = 64
+    S = np.abs(librosa.stft(y, n_fft=512, hop_length=hop)) ** 2
+    f = librosa.fft_frequencies(sr=SR, n_fft=512)
+    tot = S.sum(0) + 1e-12; low = S[f < 1000].sum(0) / tot; rms = np.sqrt(tot)
+    i = next((i for i in range(len(rms)) if rms[i] >= 0.35 * rms.max() and low[i] >= 0.6), None)
+    return None if i is None else i * hop
+
+def voiced_time(y):
+    f0 = parselmouth.Sound(y, sampling_frequency=SR).to_pitch(
+        time_step=0.005, pitch_floor=120, pitch_ceiling=500).selected_array["frequency"]
+    return (f0 > 0).sum() * 0.005
+
+def fricative_score(y, voiced_ok):
+    """Length of the noisy stretch, minus heavily any vowel left in a
+    voiceless one (s, f, x): a take with vowel residue is an "uh-f"."""
+    return len(y) / SR - (0 if voiced_ok else 10 * voiced_time(y))
+
+# How long the whispered vowel onset of a voiceless stop runs: the
+# formant transitions in it are what tell p, t and k apart.
+WHISPER_MS = {"p": 80, "t": 80, "k": 90, "c": 90, "h": 260}
+
+def whisper(y, n=512, hop=128, order=18):
+    """Same vocal-tract shape, breath instead of voice: frame-wise LPC
+    filter excited by white noise, at each frame's own loudness."""
+    from scipy.signal import lfilter
+    win = np.hanning(n); out = np.zeros(len(y) + n); rng = np.random.default_rng(7)
+    for i in range(0, max(1, len(y) - n // 2), hop):
+        fr = y[i:i + n]
+        if len(fr) < n: fr = np.pad(fr, (0, n - len(fr)))
+        e = np.sqrt(np.mean((fr * win) ** 2))
+        if e < 1e-6: continue
+        a = librosa.lpc(fr * win + 1e-9 * rng.standard_normal(n), order=order)
+        w = lfilter([1], a, rng.standard_normal(n)) * win
+        out[i:i + n] += w * e / (np.sqrt(np.mean(w ** 2)) + 1e-12)
+    return out[:len(y)] * 0.5
 
 def fade(y, fin=0.008, fout=0.04):
-    y = y.copy(); a, b = int(fin * SR), int(fout * SR)
+    y = y.copy(); a, b = int(fin * SR), min(int(fout * SR), len(y) // 3)
     y[:a] *= np.linspace(0, 1, a); y[-b:] *= np.linspace(1, 0, b) ** 2
     return y
 
@@ -104,8 +161,18 @@ for L, (ipa, ls, kind) in PH.items():
     best, bscore, info = None, -1e9, ""
     for k in range(TAKES):
         y = synth(ipa, ls)
-        if kind in ("cut", "mid"):
-            y = cut_consonant(y) if kind == "cut" else cut_mid(y); sc = fricative_score(y); inf = f"{len(y)/SR:.2f}s"
+        if kind in ("puff", "clip"):
+            y = trim(y); on = voice_onset(y) if L in "wy" else vowel_onset(y)
+            if on is None: continue
+            if kind == "puff":
+                w = int(WHISPER_MS[L] / 1000 * SR)
+                y = np.concatenate([y[:on], whisper(y[on:on + w]) * np.linspace(1, 0.3, w)[:len(y[on:on + w])]])
+                sc = on / SR      # prefer the take with the most real burst
+            else:
+                y = y[:on + int(VOICED_MS[L] / 1000 * SR)]; sc = -abs(on / SR - 0.05)
+            inf = f"onset {on/SR:.3f}s {len(y)/SR:.2f}s"
+        elif kind in ("cut", "mid"):
+            y = cut_consonant(y) if kind == "cut" else cut_mid(y); sc = fricative_score(y, kind == "mid"); inf = f"{len(y)/SR:.2f}s"
         else:
             y = trim(y); F = formants(y)
             if kind == "vowel":
@@ -118,7 +185,7 @@ for L, (ipa, ls, kind) in PH.items():
             inf = (f"F1 {F[0]:.0f} F2 {F[1]:.0f} F3 {F[2]:.0f}" if F else "unvoiced") + f"  {len(y)/SR:.2f}s"
         if sc > bscore: best, bscore, info = y, sc, inf
     # a held continuant should last long enough to hear and copy
-    if kind in ("cut", "mid", "hold") and L != "x" and len(best) / SR < 0.55:
+    if kind in ("cut", "mid", "hold", "r") and L != "x" and len(best) / SR < 0.55:
         best = librosa.effects.time_stretch(best, rate=(len(best) / SR) / 0.6)
         info += f" -> stretched {len(best)/SR:.2f}s"
     best = fade(best / np.abs(best).max() * 0.89)
