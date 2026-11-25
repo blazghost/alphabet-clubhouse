@@ -79,6 +79,7 @@ button{font-family:inherit;color:inherit;cursor:pointer;border:none;background:n
 }
 .shelf-head .rule{flex:1;height:3px;border-radius:2px;background:var(--manila-deep)}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
+a.card{color:inherit;text-decoration:none}
 .card{
   position:relative;text-align:left;padding:18px 18px 16px;border-radius:22px;
   border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink);background:#fff;
@@ -991,6 +992,19 @@ function renderHome(){
     b.addEventListener("pointerenter", () => say(a.name, {now:true}));
     (a.group === "trackpad" ? trak : phon).appendChild(b);
   });
+  /* Ms Rachel's own phonics song, on her official channel. Linked, never
+     copied: she can hear her voice and see her mouth make each sound,
+     which is what helps letter sounds stick. YouTube gives no per-letter
+     timestamps, so it opens at the start (the song comes first). */
+  const ms = document.createElement("a");
+  ms.className = "card c-sun";
+  ms.href = "https://www.youtube.com/watch?v=1v3Dk41C_10";
+  ms.target = "_blank"; ms.rel = "noopener";
+  ms.innerHTML = '<span class="skill">video</span><span class="emoji">🎵</span>' +
+    '<span class="name">Sing with Ms Rachel</span>' +
+    '<span class="what">Her letter-sounds song on YouTube. Opens in a new tab.</span>';
+  ms.addEventListener("pointerenter", () => say("Sing the letter sounds with Ms Rachel!", {now:true}));
+  phon.appendChild(ms);
 }
 </script>
 
